@@ -46,7 +46,7 @@
           "indoor_entity": "Gebruikt voor de warmteverlies- en afkoelanalyse. Laat leeg als je er geen hebt.",
           "season_start_month": "De SCOP en verwarming per graaddag worden per stookseizoen berekend.",
           "season_end_month": "Deze maand hoort er helemaal bij.",
-          "degree_day_base": "Dagen met een gemiddelde buitentemperatuur hieronder tellen als stookdag. In Nederland is 18 °C gebruikelijk.",
+          "degree_day_base": "Dagen met een gemiddelde buitentemperatuur hieronder tellen als stookdag. In Nederland is 18 °C gebruikelijk.",
           "weighted_degree_days": "Telt november–februari ×1,1, maart en oktober ×1,0 en april–september ×0,8 (Nederlandse conventie).",
           "target_room_temperature": "De kamertemperatuur waar het stooklijnadvies op mikt.",
           "emitter_type": "Hoe de warmte wordt afgegeven; bepaalt hoeveel minder warmte een lagere watertemperatuur geeft.",
@@ -126,7 +126,7 @@
         "name": "Warmteverliescoëfficiënt"
       },
       "heat_loss_design_load": {
-        "name": "Warmteverlies bij -10 °C"
+        "name": "Warmteverlies bij -10 °C"
       },
       "balance_point": {
         "name": "Stookgrens"
@@ -135,13 +135,13 @@
         "name": "Afkoeltijdconstante"
       },
       "cool_down_rate": {
-        "name": "Afkoelsnelheid bij 15 K"
+        "name": "Afkoelsnelheid bij 15 K"
       },
       "thermal_mass": {
         "name": "Warmtecapaciteit"
       },
       "curve_advice": {
-        "name": "Stooklijnadvies bij {outdoor} °C"
+        "name": "Stooklijnadvies bij {outdoor} °C"
       },
       "heating_electricity_per_degree_day_before": {
         "name": "Stroom verwarming per graaddag voor stooklijnwijziging"

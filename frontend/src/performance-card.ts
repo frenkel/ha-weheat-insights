@@ -199,11 +199,11 @@ export class WeheatInsightsPerformanceCard extends LitElement {
       const cx = PAD.left + i * group + group / 2;
       const tip = [
         fullLabel(row, data.period, lang),
-        `${t("heat_pump")}: ${fmt(row.cop_heat_pump)} (${fmt(row.heat_kwh, 1)} kWh ${t("heat")} / ${fmt(row.heat_pump_electricity_kwh, 1)} kWh ${t("electricity")})`,
-        `${t("total")}: ${fmt(row.cop)} (+ ${fmt(row.standby_kwh, 1)} kWh ${t("standby").toLowerCase()}, + ${fmt(row.indoor_unit_kwh, 1)} kWh ${t("pumps")})`,
-        `${t("heating")}: ${fmt(row.cop_heating)} (${fmt(row.heating_heat_kwh, 1)} / ${fmt(row.heating_electricity_kwh, 1)} kWh)`,
+        `${t("heat_pump")}: ${fmt(row.cop_heat_pump)} (${fmt(row.heat_kwh, 1)} kWh ${t("heat")} / ${fmt(row.heat_pump_electricity_kwh, 1)} kWh ${t("electricity")})`,
+        `${t("total")}: ${fmt(row.cop)} (+ ${fmt(row.standby_kwh, 1)} kWh ${t("standby").toLowerCase()}, + ${fmt(row.indoor_unit_kwh, 1)} kWh ${t("pumps")})`,
+        `${t("heating")}: ${fmt(row.cop_heating)} (${fmt(row.heating_heat_kwh, 1)} / ${fmt(row.heating_electricity_kwh, 1)} kWh)`,
         ...(data.has_dhw
-          ? [`${t("dhw")}: ${fmt(row.cop_dhw)} (${fmt(row.dhw_heat_kwh, 1)} / ${fmt(row.dhw_electricity_kwh, 1)} kWh)`]
+          ? [`${t("dhw")}: ${fmt(row.cop_dhw)} (${fmt(row.dhw_heat_kwh, 1)} / ${fmt(row.dhw_electricity_kwh, 1)} kWh)`]
           : []),
       ].join("\n");
       return svg`<g>

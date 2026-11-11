@@ -191,12 +191,12 @@ export class WeheatInsightsScatterCard extends LitElement {
       x: p.delta_k,
       y: p.heating_kwh,
       cls: p.excluded ? "excluded" : "used",
-      tip: `${p.day}: ${fmt.format(p.delta_k)} K, ${fmt.format(p.heating_kwh)} kWh${p.excluded ? ` (${t("excluded")})` : ""}`,
+      tip: `${p.day}: ${fmt.format(p.delta_k)} K, ${fmt.format(p.heating_kwh)} kWh${p.excluded ? ` (${t("excluded")})` : ""}`,
     }));
     const fit = data.fit;
     const summary = fit
       ? html`<div class="summary">
-          <strong>${Math.round(data.coefficient_w_per_k!)} ± ${Math.round(data.confidence_95_w_per_k!)} W/K</strong>
+          <strong>${Math.round(data.coefficient_w_per_k!)} ± ${Math.round(data.confidence_95_w_per_k!)} W/K</strong>
           · R² ${fit.r_squared.toFixed(2)} · ${data.days_used} ${t("days_used")}
         </div>`
       : html`<div class="summary muted">${data.reason ? t(`reason_${data.reason}` as never) : ""}</div>`;
@@ -227,7 +227,7 @@ export class WeheatInsightsScatterCard extends LitElement {
       x: p.outdoor_c,
       y: p.supply_c,
       color: deltaColor(p.delta_t_k, lo, hi),
-      tip: `${new Date(p.time).toLocaleString(lang, { dateStyle: "short", timeStyle: "short" })}: ${fmt.format(p.outdoor_c)} °C → ${fmt.format(p.supply_c)} °C, ΔT ${fmt.format(p.delta_t_k)} K`,
+      tip: `${new Date(p.time).toLocaleString(lang, { dateStyle: "short", timeStyle: "short" })}: ${fmt.format(p.outdoor_c)} °C → ${fmt.format(p.supply_c)} °C, ΔT ${fmt.format(p.delta_t_k)} K`,
     }));
     const toXY = (pts: CurvePoint[], key: "supply_c" | "low_c" | "high_c" = "supply_c") =>
       pts
@@ -242,9 +242,9 @@ export class WeheatInsightsScatterCard extends LitElement {
     if (curves && curves.current.length > 1) lines.push({ cls: "current", points: toXY(curves.current) });
     return html`${this._chart(dots, { xLabel: t("outdoor_temp"), yLabel: t("supply_temp"), curves: lines })}
       <div class="legend">
-        <span>ΔT ${fmt.format(lo)} K</span>
+        <span>ΔT ${fmt.format(lo)} K</span>
         <i class="gradient"></i>
-        <span>${fmt.format(hi)} K</span>
+        <span>${fmt.format(hi)} K</span>
         ${lines.some((l) => l.cls === "current") ? html`<span><i class="line current"></i>${t("current_curve")}</span>` : nothing}
         ${lines.some((l) => l.cls === "advice") ? html`<span><i class="line advice"></i>${t("advised_curve")}</span>` : nothing}
       </div>`;

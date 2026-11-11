@@ -46,7 +46,7 @@
           "indoor_entity": "Used for heat-loss and cool-down analysis. Leave empty if you have none.",
           "season_start_month": "SCOP and heating per degree day are computed per heating season.",
           "season_end_month": "The season includes this whole month.",
-          "degree_day_base": "Days with a mean outdoor temperature below this count as heating days. 18 °C is common in the Netherlands.",
+          "degree_day_base": "Days with a mean outdoor temperature below this count as heating days. 18 °C is common in the Netherlands.",
           "weighted_degree_days": "Count November–February ×1.1, March and October ×1.0 and April–September ×0.8 (Dutch convention).",
           "target_room_temperature": "The room temperature the heating-curve advice aims for.",
           "emitter_type": "How heat is delivered; affects how much a lower water temperature reduces heat output.",
@@ -126,7 +126,7 @@
         "name": "Heat-loss coefficient"
       },
       "heat_loss_design_load": {
-        "name": "Heat loss at -10 °C"
+        "name": "Heat loss at -10 °C"
       },
       "balance_point": {
         "name": "Heating balance point"
@@ -135,13 +135,13 @@
         "name": "Cool-down time constant"
       },
       "cool_down_rate": {
-        "name": "Cool-down rate at 15 K"
+        "name": "Cool-down rate at 15 K"
       },
       "thermal_mass": {
         "name": "Thermal mass"
       },
       "curve_advice": {
-        "name": "Heating curve advice at {outdoor} °C"
+        "name": "Heating curve advice at {outdoor} °C"
       },
       "heating_electricity_per_degree_day_before": {
         "name": "Heating electricity per degree day before curve change"
