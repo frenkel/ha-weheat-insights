@@ -67,6 +67,14 @@ function section(
   return { type: "grid", cards: real, ...(columnSpan ? { column_span: columnSpan } : {}) };
 }
 
+/** The "Weheat Insights" explanation at the bottom of a tab, two columns wide. */
+function aboutSection(t: Localize, key: "definitions" | "house_definitions" | "curve_definitions" | "op_definitions") {
+  return section(
+    [heading(t("title"), "mdi:information-outline"), { type: "markdown", content: `${t(key)}\n\n_${t("disclaimer")}_` }],
+    2,
+  );
+}
+
 /** Bars of the daily (or monthly) change of energy counters or degree days. */
 function changeBars(
   title: string,
@@ -231,7 +239,7 @@ export function performanceView(pump: HeatPumpConfig, t: Localize, index: number
     2,
   );
 
-  const about = section([heading(t("title"), "mdi:information-outline"), { type: "markdown", content: `${t("definitions")}\n\n_${t("disclaimer")}_` }]);
+  const about = aboutSection(t, "definitions");
 
   return {
     title: `${pump.name} · ${t("performance")}`,
@@ -260,10 +268,7 @@ export function houseView(pump: HeatPumpConfig, t: Localize, index: number): Lov
     2,
     true,
   );
-  const explanation = section([
-    heading(t("title"), "mdi:information-outline"),
-    { type: "markdown", content: `${t("house_definitions")}\n\n_${t("disclaimer")}_` },
-  ]);
+  const explanation = aboutSection(t, "house_definitions");
 
   const degreeDays = pump.degree_days_statistic_id
     ? { entity: pump.degree_days_statistic_id, name: t("degree_days") }
@@ -383,10 +388,7 @@ export function curveView(pump: HeatPumpConfig, t: Localize, index: number): Lov
     tile(i.heating_electricity_per_degree_day_after, t("per_degree_day_after")),
     tile(i.heating_curve_change_effect, t("change_effect")),
   ]);
-  const explanation = section([
-    heading(t("title"), "mdi:information-outline"),
-    { type: "markdown", content: `${t("curve_definitions")}\n\n_${t("disclaimer")}_` },
-  ]);
+  const explanation = aboutSection(t, "curve_definitions");
   return {
     title: `${pump.name} · ${t("heating_curve")}`,
     path: index === 0 ? "heating-curve" : `heating-curve-${index + 1}`,
@@ -439,10 +441,7 @@ export function operationView(pump: HeatPumpConfig, t: Localize, index: number):
     heading(t("op_timeline"), "mdi:timeline-clock-outline"),
     historyGraph(t("state"), present([entity(w.heat_pump_state, t("state"))]), 24),
   ]);
-  const explanation = section([
-    heading(t("title"), "mdi:information-outline"),
-    { type: "markdown", content: `${t("op_definitions")}\n\n_${t("disclaimer")}_` },
-  ]);
+  const explanation = aboutSection(t, "op_definitions");
   return {
     title: `${pump.name} · ${t("operation")}`,
     path: index === 0 ? "operation" : `operation-${index + 1}`,

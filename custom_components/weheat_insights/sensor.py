@@ -710,8 +710,8 @@ class OperatingCounterSensor(_OperatingEntity):
 
     @property
     def native_value(self) -> float:
-        """Completed periods, or hours in this state, since tracking started."""
+        """Completed periods, or hours in this state (running period included)."""
         total = self._tracker.totals[self._group]
         if self._kind == "count":
             return int(total["count"])
-        return round(total["seconds"] / 3600, 3)
+        return round(self._tracker.seconds_in(self._group) / 3600, 3)

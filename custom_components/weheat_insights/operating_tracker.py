@@ -114,6 +114,17 @@ class OperatingTracker:
             result[name] = window_stats(self.periods, start, now)
         return result
 
+    def seconds_in(self, group: str, now: datetime | None = None) -> float:
+        """Time in ``group`` so far, including the period that is still running.
+
+        Counting the running period as it goes puts its hours in the hours
+        they happened, instead of all at once in the hour it ends.
+        """
+        seconds = self.totals[group]["seconds"]
+        if self.open is not None and self.open[0] == group:
+            seconds += max(0.0, ((now or dt_util.utcnow()) - self.open[1]).total_seconds())
+        return seconds
+
     # -- internals -----------------------------------------------------------
 
     @callback

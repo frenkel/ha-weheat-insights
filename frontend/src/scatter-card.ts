@@ -94,6 +94,9 @@ function interpolate(a: { x: number; y: number }, b: { x: number; y: number }, x
   return a.y + ((b.y - a.y) * (x - a.x)) / (b.x - a.x);
 }
 
+/** Highest outdoor temperature of the Weheat heating curve. */
+const CURVE_MAX_OUTDOOR_C = 25;
+
 /** Blue (small ΔT) → green → orange → red (large ΔT). */
 export function deltaColor(value: number, min: number, max: number): string {
   const t = max > min ? Math.min(1, Math.max(0, (value - min) / (max - min))) : 0.5;
@@ -215,7 +218,9 @@ export class WeheatInsightsScatterCard extends LitElement {
       ${data.indoor_assumed ? html`<div class="note">${t("indoor_assumed_note")}</div>` : nothing}`;
   }
 
-  private _renderSupply(data: SupplyCurveResponse, t: Localize) {
+  private _renderSupply(response: SupplyCurveResponse, t: Localize) {
+    // The Weheat curve has no point above 25 °C outdoors: warmer hours only stretch the axis.
+    const data = { ...response, points: response.points.filter((p) => p.outdoor_c <= CURVE_MAX_OUTDOOR_C) };
     if (!data.points.length) return html`<div class="message">${t("no_data")}</div>`;
     const lang = language(this.hass!);
     const fmt = new Intl.NumberFormat(lang, { maximumFractionDigits: 1 });

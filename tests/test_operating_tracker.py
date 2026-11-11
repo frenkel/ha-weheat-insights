@@ -2,6 +2,8 @@
 
 from datetime import timedelta
 
+import pytest
+
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from homeassistant.util import dt as dt_util
@@ -138,6 +140,31 @@ async def test_operating_sensors(
     assert time_total.attributes["unit_of_measurement"] == "h"
 
     await hass.config_entries.async_unload(insights_entry.entry_id)
+
+
+async def test_time_counts_the_running_period(hass: HomeAssistant, freezer) -> None:
+    """A long period adds its hours as it runs, not all at once at its end."""
+    base = dt_util.parse_datetime("2026-11-11 08:00:00+00:00")
+    freezer.move_to(base)
+    hass.states.async_set(ENTITY, "heating")
+    tracker = OperatingTracker(hass, "entry4", ENTITY)
+    await tracker.async_start()
+    freezer.move_to(base + timedelta(minutes=10))
+    hass.states.async_set(ENTITY, "standby")
+    await hass.async_block_till_done()
+
+    assert tracker.seconds_in("standby") == 0
+    assert tracker.seconds_in("standby", base + timedelta(hours=30)) == pytest.approx(
+        30 * 3600 - 600
+    )
+    assert tracker.seconds_in("heating", base + timedelta(hours=30)) == 600
+
+    freezer.move_to(base + timedelta(hours=30))
+    hass.states.async_set(ENTITY, "heating")
+    await hass.async_block_till_done()
+    # Completing the period keeps the total where it was.
+    assert tracker.seconds_in("standby") == pytest.approx(30 * 3600 - 600)
+    await tracker.async_stop()
 
 
 async def test_migrates_other_to_legionella(hass: HomeAssistant, hass_storage) -> None:
