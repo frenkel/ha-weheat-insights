@@ -153,3 +153,14 @@ def test_short_or_heated_runs_are_ignored() -> None:
     gap = _night(datetime(2026, 11, 1, 23), 6)
     del gap[3]  # missing hour splits the run
     assert cool_down(gap).episodes == []
+
+
+def test_days_without_heating_are_excluded() -> None:
+    days = _days()
+    # A sunny mild day without any heating: it would pull the line flat.
+    no_heat = DayPoint(date(2026, 12, 1), 0.2, 20.0, 12.0)
+    result = heat_loss([*days, no_heat])
+    excluded = {d.day: d.excluded for d in result.days}
+    assert excluded[no_heat.day] is Exclusion.NO_HEATING
+    assert result.used == 30
+    assert result.coefficient_w_per_k == pytest.approx(200, abs=5)

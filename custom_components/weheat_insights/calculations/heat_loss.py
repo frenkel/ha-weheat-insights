@@ -8,8 +8,8 @@ Model, one point per day:
 H = a * 1000 / 24 W/K. ``b`` is normally negative: free heat from sun,
 people and appliances. Days are left out when the house was storing or
 releasing heat (indoor temperature changed a lot from the day before),
-when another heat source ran, when data is missing, or when it was too
-mild to say anything.
+when another heat source ran, when data is missing, when it was too mild
+to say anything, or when there was (almost) no space heating at all.
 """
 
 from __future__ import annotations
@@ -24,6 +24,10 @@ from .regression import LinearFit, linear_fit
 MIN_DAYS = 14
 MIN_SPREAD_K = 6.0
 MIN_DELTA_K = 3.0
+# Days with hardly any space heating are below the balance point: the house
+# needed no heat, so they say nothing about heat loss, and as zeros they
+# would pull the line flat (it cannot go below zero).
+MIN_HEATING_KWH_PER_DAY = 1.0
 MAX_INDOOR_CHANGE_K = 1.5
 DESIGN_INDOOR_C = 20.0
 DESIGN_OUTDOOR_C = -10.0
@@ -34,6 +38,7 @@ class Exclusion(StrEnum):
 
     MISSING_DATA = "missing_data"
     TOO_MILD = "too_mild"
+    NO_HEATING = "no_heating"
     INDOOR_CHANGED = "indoor_changed"
     OTHER_HEAT_SOURCE = "other_heat_source"
 
@@ -117,6 +122,8 @@ def classify(points: Iterable[DayPoint]) -> list[ClassifiedDay]:
             reason = Exclusion.OTHER_HEAT_SOURCE
         elif delta < MIN_DELTA_K:
             reason = Exclusion.TOO_MILD
+        elif point.heating_kwh < MIN_HEATING_KWH_PER_DAY:
+            reason = Exclusion.NO_HEATING
         elif (
             prev is not None
             and point.indoor_c is not None

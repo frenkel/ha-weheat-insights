@@ -183,7 +183,9 @@ and device name.
   day, heating heat (kWh/day) against the average indoor − outdoor
   difference, over the last 12 months. H = slope × 1000 / 24. The line's
   offset is the free heat from sun, people and appliances.
-- Days are left out when data is missing, the difference is below 3 K, the
+- Days are left out when data is missing, the difference is below 3 K, there
+  was less than 1 kWh of space heating (no heating needed, so nothing to
+  learn about heat loss; as zeros they would flatten the line), the
   indoor temperature changed more than 1.5 K from the day before (the house
   was storing or releasing heat), or a gas boiler or electric heater ran
   (only detectable within the recorder's state history, 10 days by default).
