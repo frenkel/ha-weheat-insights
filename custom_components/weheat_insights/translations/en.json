@@ -60,7 +60,7 @@
         "name": "ΔT supply/return"
       },
       "cop_today": {
-        "name": "COP today"
+        "name": "COP total today"
       },
       "cop_heating_today": {
         "name": "COP heating today"
@@ -69,7 +69,7 @@
         "name": "COP hot water today"
       },
       "cop_month": {
-        "name": "COP this month"
+        "name": "COP total this month"
       },
       "cop_heating_month": {
         "name": "COP heating this month"
@@ -78,7 +78,7 @@
         "name": "COP hot water this month"
       },
       "scop_season": {
-        "name": "SCOP this season"
+        "name": "SCOP total this season"
       },
       "scop_heating_season": {
         "name": "SCOP heating this season"
@@ -106,6 +106,15 @@
       },
       "heat_per_degree_day_last_season": {
         "name": "Heating per degree day last season"
+      },
+      "cop_heat_pump_today": {
+        "name": "COP heat pump today"
+      },
+      "cop_heat_pump_month": {
+        "name": "COP heat pump this month"
+      },
+      "scop_heat_pump_season": {
+        "name": "SCOP heat pump this season"
       }
     }
   },

@@ -144,6 +144,8 @@ def _cop_attrs(mode: str | None) -> Callable[[PeriodResult], dict[str, Any]]:
         totals = result.performance.totals
         if mode is None:
             used, made = totals.total_in, totals.total_out
+        elif mode == "heat_pump":
+            used, made = totals.heat_pump_in, totals.total_out
         else:
             used, made = totals.mode_energy(mode)
         attrs: dict[str, Any] = {
@@ -211,6 +213,7 @@ def _cop_descriptions() -> list[PeriodSensorDescription]:
     periods = (("today", "cop", _today), ("month", "cop", _month))
     periods += (("season", "scop", _season),)
     modes: tuple[tuple[str | None, str, Callable], ...] = (
+        ("heat_pump", "_heat_pump", lambda r: r.performance.cop_heat_pump),
         (None, "", lambda r: r.performance.cop),
         ("heating", "_heating", lambda r: r.performance.cop_heating),
         ("dhw", "_dhw", lambda r: r.performance.cop_dhw),

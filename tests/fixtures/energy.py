@@ -16,3 +16,17 @@ LIFETIME = EnergyTotals(
     out_dhw=1793.6,
     out_defrost=-66.43,
 )
+
+
+# 1-12 November 2026 on the same installation, as shown by the "COP this
+# month" attributes. The Weheat app showed a COP of 4.6 for this month.
+NOVEMBER = EnergyTotals(
+    in_heating=38.51,
+    in_dhw=17.38,
+    in_defrost=0.04,
+    in_standby=2.42,
+    in_indoor_unit=12.94,
+    out_heating=192.91,
+    out_dhw=66.61,
+    out_defrost=-0.27,
+)

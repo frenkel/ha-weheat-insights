@@ -14,15 +14,16 @@ Assistant: no external server, no accounts, no telemetry.
 **Available now (0.2)**
 
 - A dashboard that builds itself, with no YAML. For each heat pump:
+  - **Performance** (default tab): COP and SCOP per day, month and heating
+    season, for the heat pump (as in the Weheat app) and in total (incl.
+    standby and pumps), split into space heating and hot water; COP over time per day, month or
+    season; what defrosting costs; degree days and heating per degree day
+    compared with last season; energy per day.
   - **Live**: operating state, COP gauge (while running), room, outdoor,
     supply and return temperatures, ΔT, electrical power and heat output,
     history for the last 24 hours and hourly statistics for the last 7 days.
-  - **Performance**: real COP and SCOP per day, month and heating season,
-    split into space heating and hot water; COP over time per day, month or
-    season; what defrosting costs; degree days and heating per degree day
-    compared with last season; energy per day.
 - Sensors: ΔT supply/return; COP today, COP this month and SCOP this season
-  (total, heating, hot water); COP lost to defrost; degree days; heating per
+  (heat pump, total, heating, hot water); COP lost to defrost; degree days; heating per
   degree day (this season, same period last season, whole last season).
 - Works from day one with your existing history: everything is computed from
   Home Assistant's long-term statistics of the core Weheat energy counters.
@@ -96,11 +97,13 @@ separate frontend install.
 
 ## How the numbers are calculated
 
-- **Total COP/SCOP** = all useful heat ÷ all electricity, including standby
-  and the indoor unit. This is the honest figure for the whole system and
-  can be lower than the Weheat app shows. The total COP sensors list in
-  their attributes where the electricity went (heating, hot water, defrost,
-  standby, indoor unit).
+- **Heat pump COP/SCOP** = all useful heat ÷ compressor electricity for
+  heating, hot water and defrost. This is the same number the Weheat app
+  shows.
+- **Total COP/SCOP** = the same heat ÷ all electricity, so also standby and
+  the indoor unit (circulation pumps). This is what your heat actually
+  costs. The total COP sensors list in their attributes where the
+  electricity went (heating, hot water, defrost, standby, indoor unit).
 - **Heating** and **hot water COP** count only the compressor electricity for
   that mode, plus its share of defrost. The core Weheat integration reports
   defrost as one combined counter, so defrost electricity and the heat taken

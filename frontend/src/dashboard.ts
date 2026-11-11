@@ -136,7 +136,6 @@ export function pumpView(pump: HeatPumpConfig, t: Localize, index: number): Love
     entity(w.power_input, t("power_input")),
     entity(w.power_output, t("power_output")),
   ]);
-  const cop = present([entity(w.cop, t("cop"))]);
   const deltaT = present([entity(pump.insights.delta_t, t("delta_t"))]);
 
   const live = section([
@@ -147,16 +146,15 @@ export function pumpView(pump: HeatPumpConfig, t: Localize, index: number): Love
     tile(outdoor, t("outdoor")),
     tile(w.water_outlet_temperature, t("supply")),
     tile(w.water_inlet_temperature, t("return")),
-    tile(pump.insights.delta_t, t("delta_t")),
-    tile(w.power_input, t("power_input")),
-    tile(w.power_output, t("power_output")),
+    tile(pump.insights.delta_t, t("delta_t_short")),
+    tile(w.power_input, t("power_input_short")),
+    tile(w.power_output, t("power_output_short")),
   ]);
 
   const day = section([
     heading(t("last_24h"), "mdi:clock-outline"),
     historyGraph(t("temperatures"), temperatures, 24),
     historyGraph(t("power"), power, 24),
-    historyGraph(t("cop"), cop, 24),
     historyGraph(t("delta_t"), deltaT, 24),
     historyGraph(t("state"), present([entity(w.heat_pump_state, t("state"))]), 24),
   ]);
@@ -187,13 +185,17 @@ export function performanceView(pump: HeatPumpConfig, t: Localize, index: number
 
   const headline = section([
     heading(t("scop_heading"), "mdi:chart-bar"),
+    tile(i.scop_heat_pump_season, t("heat_pump")),
     tile(i.scop_season, t("total")),
     tile(i.scop_heating_season, t("heating")),
     tile(i.scop_dhw_season, t("dhw")),
-    heading(t("cop_heading"), "mdi:heat-pump-outline"),
-    tile(i.cop_month, t("this_month")),
-    tile(i.cop_today, t("today")),
     tile(i.defrost_cop_impact_season, t("defrost_loss")),
+    heading(t("cop_month"), "mdi:calendar-month"),
+    tile(i.cop_heat_pump_month, t("heat_pump")),
+    tile(i.cop_month, t("total")),
+    heading(t("cop_today"), "mdi:calendar-today"),
+    tile(i.cop_heat_pump_today, t("heat_pump")),
+    tile(i.cop_today, t("total")),
   ]);
 
   // The card has its own title, so no heading above it.
@@ -269,7 +271,8 @@ export function generateDashboard(pumps: HeatPumpConfig[], t: Localize): Lovelac
   }
   return {
     title: t("title"),
-    views: pumps.flatMap((pump, index) => [pumpView(pump, t, index), performanceView(pump, t, index)]),
+    // Performance first: it is the default tab; live status second.
+    views: pumps.flatMap((pump, index) => [performanceView(pump, t, index), pumpView(pump, t, index)]),
   };
 }
 

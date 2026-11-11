@@ -52,6 +52,8 @@ def test_summarise_groups_months_into_seasons() -> None:
     assert season["heating_electricity_kwh"] == 200.0  # July is outside
     assert season["cop_heating"] == pytest.approx(4.0)
     assert season["cop_dhw"] is None
+    assert season["cop_heat_pump"] == pytest.approx(4.0)
+    assert season["heat_pump_electricity_kwh"] == 200.0
 
 
 def test_summarise_empty_period() -> None:

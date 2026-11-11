@@ -8,7 +8,7 @@ from custom_components.weheat_insights.calculations.performance import (
     ratio,
 )
 
-from .fixtures.energy import LIFETIME
+from .fixtures.energy import LIFETIME, NOVEMBER
 
 
 def test_total_cop_includes_everything() -> None:
@@ -90,3 +90,22 @@ def test_ratio_threshold() -> None:
     assert ratio(4.0, 1.0) == 4.0
     assert ratio(4.0, 0.4) is None
     assert ratio(4.0, 0.4, minimum=0.1) == pytest.approx(10.0)
+
+
+def test_heat_pump_cop_matches_the_weheat_app() -> None:
+    result = performance(NOVEMBER)
+    assert round(result.cop_heat_pump, 1) == 4.6  # what the app shows
+    assert result.cop_heat_pump == pytest.approx(259.25 / 55.93, abs=1e-3)
+    assert result.cop == pytest.approx(259.25 / 71.29, abs=1e-3)
+    assert result.cop_heating == pytest.approx(5.00, abs=0.01)
+    assert result.cop_dhw == pytest.approx(3.83, abs=0.01)
+
+
+def test_heat_pump_cop_is_the_electricity_weighted_mix_of_the_modes() -> None:
+    result = performance(NOVEMBER)
+    heating_in, _ = NOVEMBER.mode_energy("heating")
+    dhw_in, _ = NOVEMBER.mode_energy("dhw")
+    mix = (result.cop_heating * heating_in + result.cop_dhw * dhw_in) / (
+        heating_in + dhw_in
+    )
+    assert result.cop_heat_pump == pytest.approx(mix)

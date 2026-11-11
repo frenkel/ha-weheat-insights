@@ -47,6 +47,11 @@ const en = {
   degree_days_per_day: "Degree days per day",
   degree_days_per_month: "Degree days per month",
   defrost: "Defrost",
+  delta_t_short: "ΔT",
+  power_input_short: "Electricity",
+  power_output_short: "Heat",
+  heat_pump: "Heat pump",
+  pumps: "pumps",
   this_season: "This season",
   this_month: "This month",
   today: "Today",
@@ -58,7 +63,7 @@ const en = {
   standby: "Standby",
   degree_days: "Degree days",
   definitions:
-    "**How these numbers are calculated.** *Total* COP/SCOP is all useful heat divided by all electricity, including standby and the indoor unit. *Heating* and *hot water* only count the compressor electricity for that mode plus its share of defrost (split by electricity use); standby and the indoor unit are left out. Defrost heat taken back from the water counts against the COP. *Heating per degree day* uses heating heat only and lets you compare winters of different coldness. Figures come from Home Assistant's long-term statistics and can lag up to about an hour.",
+    "**How these numbers are calculated.** *Heat pump* COP/SCOP is all useful heat divided by the compressor electricity for heating, hot water and defrost; this matches the Weheat app. *Total* also counts standby and the indoor unit (circulation pumps): what your heat actually costs. *Heating* and *hot water* only count the compressor electricity for that mode plus its share of defrost (split by electricity use); standby and the indoor unit are left out. Defrost heat taken back from the water counts against the COP. *Heating per degree day* uses heating heat only and lets you compare winters of different coldness. Figures come from Home Assistant's long-term statistics and can lag up to about an hour.",
 };
 
 type Key = keyof typeof en;
@@ -110,6 +115,11 @@ const nl: Record<Key, string> = {
   degree_days_per_day: "Graaddagen per dag",
   degree_days_per_month: "Graaddagen per maand",
   defrost: "Ontdooien",
+  delta_t_short: "ΔT",
+  power_input_short: "Stroom",
+  power_output_short: "Warmte",
+  heat_pump: "Warmtepomp",
+  pumps: "pompen",
   this_season: "Dit seizoen",
   this_month: "Deze maand",
   today: "Vandaag",
@@ -121,7 +131,7 @@ const nl: Record<Key, string> = {
   standby: "Stand-by",
   degree_days: "Graaddagen",
   definitions:
-    "**Zo worden deze getallen berekend.** De *totale* COP/SCOP is alle nuttige warmte gedeeld door alle stroom, inclusief stand-by en de binnenunit. *Verwarming* en *warm water* tellen alleen de compressorstroom voor die functie plus hun deel van het ontdooien (verdeeld naar stroomverbruik); stand-by en de binnenunit tellen daar niet mee. Warmte die bij ontdooien uit het water wordt gehaald, telt negatief mee. *Verwarming per graaddag* gebruikt alleen verwarmingswarmte, zodat je winters van verschillende koude kunt vergelijken. De cijfers komen uit de langetermijnstatistieken van Home Assistant en kunnen tot ongeveer een uur achterlopen.",
+    "**Zo worden deze getallen berekend.** De COP/SCOP *warmtepomp* is alle nuttige warmte gedeeld door de compressorstroom voor verwarming, warm water en ontdooien; dat komt overeen met de Weheat-app. *Totaal* telt ook stand-by en de binnenunit (circulatiepompen) mee: wat je warmte echt kost. *Verwarming* en *warm water* tellen alleen de compressorstroom voor die functie plus hun deel van het ontdooien (verdeeld naar stroomverbruik); stand-by en de binnenunit tellen daar niet mee. Warmte die bij ontdooien uit het water wordt gehaald, telt negatief mee. *Verwarming per graaddag* gebruikt alleen verwarmingswarmte, zodat je winters van verschillende koude kunt vergelijken. De cijfers komen uit de langetermijnstatistieken van Home Assistant en kunnen tot ongeveer een uur achterlopen.",
 };
 
 const translations: Record<string, Record<Key, string>> = { en, nl };

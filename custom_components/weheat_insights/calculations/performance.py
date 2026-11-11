@@ -2,9 +2,11 @@
 
 Definitions (see README):
 
-* Total COP: all useful heat (heating + DHW + defrost, defrost being
-  negative) divided by all electricity (heating + DHW + defrost + standby
-  + indoor unit). This is the honest whole-system figure.
+* Heat-pump COP: all useful heat (heating + DHW + defrost, defrost being
+  negative) divided by the compressor electricity (heating + DHW +
+  defrost). This matches what the Weheat app shows.
+* Total COP: the same heat divided by all electricity, i.e. also standby
+  and the indoor unit (circulation pumps). This is what heat costs you.
 * Heating and DHW COP: only the electricity the compressor used for that
   mode, plus its share of defrost. The core Weheat integration reports
   defrost as one combined counter, so defrost electricity and defrost heat
@@ -56,6 +58,11 @@ class EnergyTotals:
         )
 
     @property
+    def heat_pump_in(self) -> float:
+        """Compressor electricity: heating, DHW and defrost (as the Weheat app)."""
+        return self.in_heating + self.in_dhw + self.in_defrost
+
+    @property
     def total_out(self) -> float:
         """All useful heat, net of what defrost took back."""
         return self.out_heating + self.out_dhw + self.out_defrost
@@ -96,7 +103,8 @@ def ratio(
 class Performance:
     """Derived figures for one period."""
 
-    cop: float | None
+    cop: float | None  # total, incl. standby and indoor unit
+    cop_heat_pump: float | None  # compressor only, as the Weheat app
     cop_heating: float | None
     cop_dhw: float | None
     cop_without_defrost: float | None
@@ -116,6 +124,7 @@ def performance(totals: EnergyTotals, minimum: float = MIN_INPUT_KWH) -> Perform
     dhw_in, dhw_out = totals.mode_energy("dhw")
     return Performance(
         cop=cop,
+        cop_heat_pump=ratio(totals.total_out, totals.heat_pump_in, minimum),
         cop_heating=ratio(heating_out, heating_in, minimum),
         cop_dhw=ratio(dhw_out, dhw_in, minimum),
         cop_without_defrost=cop_without_defrost,

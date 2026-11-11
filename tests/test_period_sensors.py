@@ -108,6 +108,12 @@ async def test_period_sensors_from_statistics(hass: HomeAssistant, freezer) -> N
     # Unitless COP states are rounded to the display precision.
     assert len(scop.state.split(".")[1]) <= 2
 
+    heat_pump = hass.states.get(_entity_id(hass, "scop_heat_pump_season"))
+    assert float(heat_pump.state) == pytest.approx(
+        total_out / (0.4 + 0.1 + 0.02), abs=0.01
+    )
+    assert heat_pump.attributes["electricity_kwh"] == pytest.approx(0.52 * 48)
+
     share = 0.4 / 0.5
     heating = hass.states.get(_entity_id(hass, "scop_heating_season"))
     expected = (1.6 - share * 0.08) / (0.4 + share * 0.02)

@@ -2,7 +2,7 @@
   "entity": {
     "sensor": {
       "cop_today": {
-        "default": "mdi:heat-pump-outline"
+        "default": "mdi:home-lightning-bolt-outline"
       },
       "cop_heating_today": {
         "default": "mdi:radiator"
@@ -11,7 +11,7 @@
         "default": "mdi:water-boiler"
       },
       "cop_month": {
-        "default": "mdi:heat-pump-outline"
+        "default": "mdi:home-lightning-bolt-outline"
       },
       "cop_heating_month": {
         "default": "mdi:radiator"
@@ -20,7 +20,7 @@
         "default": "mdi:water-boiler"
       },
       "scop_season": {
-        "default": "mdi:heat-pump-outline"
+        "default": "mdi:home-lightning-bolt-outline"
       },
       "scop_heating_season": {
         "default": "mdi:radiator"
@@ -51,6 +51,15 @@
       },
       "delta_t": {
         "default": "mdi:thermometer-chevron-down"
+      },
+      "cop_heat_pump_today": {
+        "default": "mdi:heat-pump-outline"
+      },
+      "cop_heat_pump_month": {
+        "default": "mdi:heat-pump-outline"
+      },
+      "scop_heat_pump_season": {
+        "default": "mdi:heat-pump-outline"
       }
     }
   }

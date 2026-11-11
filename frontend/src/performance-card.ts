@@ -16,10 +16,14 @@ interface PeriodRow {
   start: string;
   end: string;
   cop: number | null;
+  cop_heat_pump: number | null;
   cop_heating: number | null;
   cop_dhw: number | null;
   electricity_kwh: number;
   heat_kwh: number;
+  heat_pump_electricity_kwh: number;
+  standby_kwh: number;
+  indoor_unit_kwh: number;
   heating_electricity_kwh: number;
   heating_heat_kwh: number;
   dhw_electricity_kwh: number;
@@ -162,7 +166,7 @@ export class WeheatInsightsPerformanceCard extends LitElement {
   private _renderChart(data: HistoryResponse, t: Localize) {
     const lang = language(this.hass!);
     const rows = data.periods;
-    const values = rows.flatMap((r) => [r.cop, r.cop_heating, data.has_dhw ? r.cop_dhw : null]);
+    const values = rows.flatMap((r) => [r.cop_heat_pump, r.cop, r.cop_heating, data.has_dhw ? r.cop_dhw : null]);
     const max = Math.max(5, Math.ceil(Math.max(...values.map((v) => v ?? 0)) + 0.5));
     const plotW = WIDTH - PAD.left - PAD.right;
     const plotH = HEIGHT - PAD.top - PAD.bottom;
@@ -182,12 +186,18 @@ export class WeheatInsightsPerformanceCard extends LitElement {
     const bar = (value: number | null, x: number, cls: string) =>
       value == null ? nothing : svg`<rect class=${cls} x=${x} y=${y(value)} width=${barW} height=${y(0) - y(value)} rx="2"></rect>`;
 
+    const marker = (value: number | null, x: number, cls: string) =>
+      value == null
+        ? nothing
+        : svg`<line class=${cls} x1=${x - 2} x2=${x + barW * series + 2} y1=${y(value)} y2=${y(value)}></line>`;
+
     const groups = rows.map((row, i) => {
       const x0 = PAD.left + i * group + (group - barW * series) / 2;
       const cx = PAD.left + i * group + group / 2;
       const tip = [
         fullLabel(row, data.period, lang),
-        `${t("total")}: ${fmt(row.cop)} (${fmt(row.heat_kwh, 1)} kWh ${t("heat")} / ${fmt(row.electricity_kwh, 1)} kWh ${t("electricity")})`,
+        `${t("heat_pump")}: ${fmt(row.cop_heat_pump)} (${fmt(row.heat_kwh, 1)} kWh ${t("heat")} / ${fmt(row.heat_pump_electricity_kwh, 1)} kWh ${t("electricity")})`,
+        `${t("total")}: ${fmt(row.cop)} (+ ${fmt(row.standby_kwh, 1)} kWh ${t("standby").toLowerCase()}, + ${fmt(row.indoor_unit_kwh, 1)} kWh ${t("pumps")})`,
         `${t("heating")}: ${fmt(row.cop_heating)} (${fmt(row.heating_heat_kwh, 1)} / ${fmt(row.heating_electricity_kwh, 1)} kWh)`,
         ...(data.has_dhw
           ? [`${t("dhw")}: ${fmt(row.cop_dhw)} (${fmt(row.dhw_heat_kwh, 1)} / ${fmt(row.dhw_electricity_kwh, 1)} kWh)`]
@@ -198,7 +208,8 @@ export class WeheatInsightsPerformanceCard extends LitElement {
         <rect class="hit" x=${PAD.left + i * group} y=${PAD.top} width=${group} height=${plotH}></rect>
         ${bar(row.cop_heating, x0, "heating")}
         ${data.has_dhw ? bar(row.cop_dhw, x0 + barW, "dhw") : nothing}
-        ${row.cop == null ? nothing : svg`<line class="total" x1=${x0 - 2} x2=${x0 + barW * series + 2} y1=${y(row.cop)} y2=${y(row.cop)}></line>`}
+        ${marker(row.cop_heat_pump, x0, "heat-pump")}
+        ${marker(row.cop, x0, "total")}
         ${i % labelEvery === 0 ? svg`<text class="axis" x=${cx} y=${HEIGHT - 8} text-anchor="middle">${label(row, data.period, lang)}</text>` : nothing}
       </g>`;
     });
@@ -212,6 +223,7 @@ export class WeheatInsightsPerformanceCard extends LitElement {
     return html`<div class="legend">
       <span><i class="swatch heating"></i>${t("heating")}</span>
       ${data.has_dhw ? html`<span><i class="swatch dhw"></i>${t("dhw")}</span>` : nothing}
+      <span><i class="swatch heat-pump"></i>${t("heat_pump")}</span>
       <span><i class="swatch total"></i>${t("total")}</span>
     </div>`;
   }
@@ -277,10 +289,16 @@ export class WeheatInsightsPerformanceCard extends LitElement {
     .dhw {
       fill: var(--blue-color, #2196f3);
     }
-    line.total {
+    line.heat-pump {
       stroke: var(--primary-text-color);
       stroke-width: 2.5;
       stroke-linecap: round;
+    }
+    line.total {
+      stroke: var(--error-color, #db4437);
+      stroke-width: 2.5;
+      stroke-linecap: round;
+      stroke-dasharray: 4 3;
     }
     .legend {
       display: flex;
@@ -304,9 +322,13 @@ export class WeheatInsightsPerformanceCard extends LitElement {
     .swatch.dhw {
       background: var(--blue-color, #2196f3);
     }
-    .swatch.total {
+    .swatch.heat-pump {
       height: 3px;
       background: var(--primary-text-color);
+    }
+    .swatch.total {
+      height: 3px;
+      background: repeating-linear-gradient(90deg, var(--error-color, #db4437) 0 4px, transparent 4px 7px);
     }
     .message {
       padding: 24px 0;

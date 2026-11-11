@@ -60,7 +60,7 @@
         "name": "ΔT aanvoer/retour"
       },
       "cop_today": {
-        "name": "COP vandaag"
+        "name": "COP totaal vandaag"
       },
       "cop_heating_today": {
         "name": "COP verwarming vandaag"
@@ -69,7 +69,7 @@
         "name": "COP warm water vandaag"
       },
       "cop_month": {
-        "name": "COP deze maand"
+        "name": "COP totaal deze maand"
       },
       "cop_heating_month": {
         "name": "COP verwarming deze maand"
@@ -78,7 +78,7 @@
         "name": "COP warm water deze maand"
       },
       "scop_season": {
-        "name": "SCOP dit stookseizoen"
+        "name": "SCOP totaal dit stookseizoen"
       },
       "scop_heating_season": {
         "name": "SCOP verwarming dit stookseizoen"
@@ -106,6 +106,15 @@
       },
       "heat_per_degree_day_last_season": {
         "name": "Verwarming per graaddag vorig stookseizoen"
+      },
+      "cop_heat_pump_today": {
+        "name": "COP warmtepomp vandaag"
+      },
+      "cop_heat_pump_month": {
+        "name": "COP warmtepomp deze maand"
+      },
+      "scop_heat_pump_season": {
+        "name": "SCOP warmtepomp dit stookseizoen"
       }
     }
   },
