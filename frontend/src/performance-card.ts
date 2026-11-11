@@ -165,7 +165,10 @@ export class WeheatInsightsPerformanceCard extends LitElement {
 
   private _renderChart(data: HistoryResponse, t: Localize) {
     const lang = language(this.hass!);
-    const rows = data.periods;
+    // Start at the first period with data: before that there is no history
+    // (e.g. the core Weheat integration was installed recently).
+    const first = data.periods.findIndex((row) => row.cop != null || row.cop_heat_pump != null);
+    const rows = data.periods.slice(Math.max(0, first));
     const values = rows.flatMap((r) => [r.cop_heat_pump, r.cop, r.cop_heating, data.has_dhw ? r.cop_dhw : null]);
     const max = Math.max(5, Math.ceil(Math.max(...values.map((v) => v ?? 0)) + 0.5));
     const plotW = WIDTH - PAD.left - PAD.right;

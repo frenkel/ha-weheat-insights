@@ -1,6 +1,6 @@
 [project]
 name = "ha-weheat-insights"
-version = "0.3.0"
+version = "0.3.1"
 description = "Unofficial Home Assistant integration with insights for Weheat heat pumps"
 requires-python = ">=3.14"
 license = "MIT"
