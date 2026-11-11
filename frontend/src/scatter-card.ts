@@ -94,6 +94,27 @@ function interpolate(a: { x: number; y: number }, b: { x: number; y: number }, x
   return a.y + ((b.y - a.y) * (x - a.x)) / (b.x - a.x);
 }
 
+/**
+ * The x range where the straight line ``f`` stays inside [y0, y1], so it is
+ * cut off at the plot edges instead of bent by clamping its end points.
+ */
+export function clipLine(
+  f: (x: number) => number,
+  x0: number,
+  x1: number,
+  y0: number,
+  y1: number,
+): [number, number] | null {
+  const slope = (f(x1) - f(x0)) / (x1 - x0);
+  let [a, b] = [x0, x1];
+  if (slope === 0) return f(x0) >= y0 && f(x0) <= y1 ? [a, b] : null;
+  const atY = (y: number) => x0 + (y - f(x0)) / slope;
+  const [p, q] = [atY(y0), atY(y1)].sort((m, n) => m - n);
+  a = Math.max(a, p);
+  b = Math.min(b, q);
+  return a < b ? [a, b] : null;
+}
+
 /** Highest outdoor temperature of the Weheat heating curve. */
 const CURVE_MAX_OUTDOOR_C = 25;
 
@@ -281,6 +302,7 @@ export class WeheatInsightsScatterCard extends LitElement {
     const sx = (x: number) => PAD.left + ((x - x0) / (x1 - x0)) * plotW;
     const sy = (y: number) => PAD.top + plotH - ((y - y0) / (y1 - y0)) * plotH;
     const clampY = (y: number) => Math.min(y1, Math.max(y0, y));
+    const fit = opts.line ? clipLine(opts.line, x0, x1, y0, y1) : null;
 
     return html`<svg viewBox="0 0 ${WIDTH} ${HEIGHT}" role="img" aria-label=${opts.yLabel}>
       ${yTicks.map(
@@ -308,8 +330,8 @@ export class WeheatInsightsScatterCard extends LitElement {
           : nothing;
         return svg`${band}<polyline class="curve ${curve.cls}" points=${path(curve.points)}></polyline>`;
       })}
-      ${opts.line
-        ? svg`<line class="fit" x1=${sx(x0)} y1=${sy(clampY(opts.line(x0)))} x2=${sx(x1)} y2=${sy(clampY(opts.line(x1)))}></line>`
+      ${fit
+        ? svg`<line class="fit" x1=${sx(fit[0])} y1=${sy(opts.line!(fit[0]))} x2=${sx(fit[1])} y2=${sy(opts.line!(fit[1]))}></line>`
         : nothing}
     </svg>`;
   }
