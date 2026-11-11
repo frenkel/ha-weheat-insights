@@ -418,8 +418,8 @@ export function operationView(pump: HeatPumpConfig, t: Localize, index: number):
   );
   const perDay = section(
     [
-      changeBars(t("op_periods_per_day"), counters("_periods_total", ["heating", "dhw", "defrost"]), "day", 30),
-      changeBars(t("op_hours_per_day"), counters("_time_total", ["heating", "dhw", "defrost", "standby"]), "day", 30),
+      changeBars(t("op_periods_per_day"), counters("_periods_total", ["heating", "dhw", "defrost", "legionella"]), "day", 30),
+      changeBars(t("op_hours_per_day"), counters("_time_total", ["heating", "dhw", "defrost", "legionella", "standby"]), "day", 30),
     ],
     2,
     true,
