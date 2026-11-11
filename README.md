@@ -60,6 +60,12 @@ next to the curve you entered.
 
 ![Heating curve tab: advice table](docs/images/heating-curve.png)
 
+Every dot is an hour of heating: supply temperature against outdoor
+temperature, coloured by the supply–return difference, with the advised and
+your current curve.
+
+![Heating curve tab: supply temperature against outdoor temperature](docs/images/supply-curve.png)
+
 **Operation**: how the last 30 days were spent and how often and how long
 each state ran, with hours per state per day.
 
