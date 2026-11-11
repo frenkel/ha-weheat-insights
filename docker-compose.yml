@@ -1,0 +1,13 @@
+# Local Home Assistant for developing Weheat Insights. See docs/development.md.
+services:
+  homeassistant:
+    image: ghcr.io/home-assistant/home-assistant:2026.11.1
+    container_name: weheat-insights-dev
+    ports:
+      - "8123:8123"
+    volumes:
+      - ./dev/config:/config
+      - ./custom_components/weheat_insights:/config/custom_components/weheat_insights:ro
+    environment:
+      - TZ=Europe/Amsterdam
+    restart: unless-stopped

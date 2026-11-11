@@ -1,0 +1,8 @@
+# Development configuration for Weheat Insights.
+default_config:
+
+logger:
+  default: info
+  logs:
+    custom_components.weheat_insights: debug
+    homeassistant.components.weheat: debug
