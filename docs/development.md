@@ -50,3 +50,23 @@ frontend change, rebuild the bundle and hard-refresh the browser.
 
 `dev/config/` holds the instance's state and is ignored by git, except for
 `configuration.yaml`.
+
+## Releasing
+
+The Home Assistant Marketplace shows the name of the newest GitHub release as
+the version (and a commit hash when there are no releases). To release:
+
+1. Bump the version in `custom_components/weheat_insights/manifest.json`,
+   `frontend/package.json` (and its lock file) and `pyproject.toml`, and
+   rebuild the frontend bundle.
+2. Commit and push.
+3. Tag and push the tag:
+
+   ```bash
+   git tag v0.6.4
+   git push origin v0.6.4
+   ```
+
+The `Release` workflow checks that the tag matches the manifest version and
+creates the GitHub release with notes generated from the commits. A tag with a
+suffix, such as `v0.7.0-beta.1`, becomes a pre-release.

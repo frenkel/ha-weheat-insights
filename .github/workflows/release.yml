@@ -1,0 +1,40 @@
+name: Release
+
+# Push a tag like v0.6.4 (matching manifest.json) to publish a GitHub
+# release. The Home Assistant Marketplace shows release names as versions;
+# without releases it shows commit hashes.
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Tag must match the manifest version
+        run: |
+          version=$(python3 -c "import json; print(json.load(open('custom_components/weheat_insights/manifest.json'))['version'])")
+          if [ "${GITHUB_REF_NAME#v}" != "$version" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match manifest version $version"
+            exit 1
+          fi
+
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # A tag with a suffix (v0.7.0-beta.1) becomes a pre-release, which
+          # the Marketplace only offers when "Pre-release" is switched on.
+          prerelease=""
+          case "$GITHUB_REF_NAME" in *-*) prerelease="--prerelease" ;; esac
+          gh release create "$GITHUB_REF_NAME" \
+            --title "$GITHUB_REF_NAME" \
+            --generate-notes \
+            --verify-tag \
+            $prerelease
