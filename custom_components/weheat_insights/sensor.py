@@ -1,10 +1,11 @@
 """Derived sensors for Weheat Insights.
 
 The COP/SCOP and per-degree-day sensors are ratios for a period so far.
-They deliberately have no ``state_class``: Home Assistant would store hourly
-means of those running ratios, which mean nothing (the same trap as
-averaging an instantaneous COP). History of COP per day or month is drawn
-from the energy statistics by the performance card instead.
+History of COP per day or month is drawn from the energy statistics by the
+performance card, never from hourly means of these running ratios (the same
+trap as averaging an instantaneous COP). The unitless COP sensors still get
+``state_class: measurement``: without a unit or state class the frontend
+treats a state as text and shows it without the user's decimal separator.
 """
 
 from __future__ import annotations
@@ -259,6 +260,7 @@ def _cop_descriptions() -> list[PeriodSensorDescription]:
         PeriodSensorDescription(
             key=f"{prefix}{suffix}_{period}",
             translation_key=f"{prefix}{suffix}_{period}",
+            state_class=SensorStateClass.MEASUREMENT,
             suggested_display_precision=2,
             period_fn=period_fn,
             value_fn=value_fn,
@@ -275,6 +277,7 @@ PERIOD_SENSORS: list[PeriodSensorDescription] = [
     PeriodSensorDescription(
         key="defrost_cop_impact_season",
         translation_key="defrost_cop_impact_season",
+        state_class=SensorStateClass.MEASUREMENT,
         suggested_display_precision=2,
         period_fn=_season,
         value_fn=lambda r: r.performance.defrost_cop_impact,
@@ -363,8 +366,7 @@ class PeriodSensor(
     @property
     def native_value(self) -> float | None:
         """Return the figure, rounded for storage."""
-        # COP sensors have no unit, so the frontend shows the raw state
-        # without applying the display precision: round it here.
+        # Rounded here too, so the stored state matches what is shown.
         precision = self.entity_description.suggested_display_precision
         return _round(
             self.entity_description.value_fn(self._result),

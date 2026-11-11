@@ -117,7 +117,8 @@ async def test_period_sensors_from_statistics(hass: HomeAssistant, freezer) -> N
     total_in = 0.4 + 0.1 + 0.02 + 0.03
     total_out = 1.6 + 0.3 - 0.08
     assert float(scop.state) == pytest.approx(total_out / total_in, abs=0.01)
-    assert "state_class" not in scop.attributes
+    # A state class makes the frontend format it as a number (decimal comma).
+    assert scop.attributes["state_class"] == "measurement"
     assert scop.attributes["electricity_kwh"] > 0
     assert scop.attributes["electricity_standby_kwh"] == pytest.approx(0.03 * 48)
     # Unitless COP states are rounded to the display precision.
