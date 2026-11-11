@@ -8,3 +8,7 @@ NAME: Final = "Weheat Insights"
 WEHEAT_DOMAIN: Final = "weheat"
 
 LOGGER: Logger = getLogger(__package__)
+
+CONF_HEAT_PUMP_ID: Final = "heat_pump_id"
+CONF_OUTDOOR_ENTITY: Final = "outdoor_entity"
+CONF_INDOOR_ENTITY: Final = "indoor_entity"

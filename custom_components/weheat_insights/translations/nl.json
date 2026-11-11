@@ -1,0 +1,49 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Kies een warmtepomp",
+        "description": "Kies de Weheat-warmtepomp die je wilt analyseren. Weheat Insights is een onofficieel communityproject en is niet verbonden aan Weheat.",
+        "data": {
+          "heat_pump_id": "Warmtepomp"
+        }
+      },
+      "sources": {
+        "title": "Temperatuurbronnen voor {heat_pump}",
+        "description": "De eigen buitentemperatuursensor van de warmtepomp zit in de luchtinlaat en kan iets te laag of te hoog meten. Je kunt een andere buitensensor kiezen als je die hebt.",
+        "data": {
+          "outdoor_entity": "Buitentemperatuur",
+          "indoor_entity": "Binnentemperatuur (optioneel)"
+        },
+        "data_description": {
+          "outdoor_entity": "Gebruikt voor graaddagen en de warmteverliesanalyse.",
+          "indoor_entity": "Gebruikt voor de warmteverlies- en afkoelanalyse. Laat leeg als je er geen hebt."
+        }
+      }
+    },
+    "abort": {
+      "no_heat_pumps": "Geen Weheat-warmtepompen gevonden. Stel eerst de Weheat-integratie in.",
+      "already_configured": "Alle Weheat-warmtepompen zijn al ingesteld."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Temperatuurbronnen",
+        "data": {
+          "outdoor_entity": "Buitentemperatuur",
+          "indoor_entity": "Binnentemperatuur (optioneel)"
+        },
+        "data_description": {
+          "outdoor_entity": "Gebruikt voor graaddagen en de warmteverliesanalyse.",
+          "indoor_entity": "Gebruikt voor de warmteverlies- en afkoelanalyse. Laat leeg als je er geen hebt."
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "heat_pump_not_found": {
+      "message": "Weheat-warmtepomp {uuid} niet gevonden. Is de Weheat-integratie geladen?"
+    }
+  }
+}

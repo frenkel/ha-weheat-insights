@@ -1,0 +1,49 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Choose a heat pump",
+        "description": "Pick the Weheat heat pump to analyse. Weheat Insights is an unofficial community project and is not affiliated with Weheat.",
+        "data": {
+          "heat_pump_id": "Heat pump"
+        }
+      },
+      "sources": {
+        "title": "Temperature sources for {heat_pump}",
+        "description": "The heat pump's own outdoor sensor sits in the air inlet and can read a little low or high. You can pick a different outdoor sensor if you have one.",
+        "data": {
+          "outdoor_entity": "Outdoor temperature",
+          "indoor_entity": "Indoor temperature (optional)"
+        },
+        "data_description": {
+          "outdoor_entity": "Used for degree days and heat-loss analysis.",
+          "indoor_entity": "Used for heat-loss and cool-down analysis. Leave empty if you have none."
+        }
+      }
+    },
+    "abort": {
+      "no_heat_pumps": "No Weheat heat pumps found. Set up the Weheat integration first.",
+      "already_configured": "All Weheat heat pumps are already set up."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Temperature sources",
+        "data": {
+          "outdoor_entity": "Outdoor temperature",
+          "indoor_entity": "Indoor temperature (optional)"
+        },
+        "data_description": {
+          "outdoor_entity": "Used for degree days and heat-loss analysis.",
+          "indoor_entity": "Used for heat-loss and cool-down analysis. Leave empty if you have none."
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "heat_pump_not_found": {
+      "message": "Weheat heat pump {uuid} was not found. Is the Weheat integration loaded?"
+    }
+  }
+}

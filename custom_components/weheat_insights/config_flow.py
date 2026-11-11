@@ -1,0 +1,187 @@
+"""Config and options flow for Weheat Insights."""
+
+from __future__ import annotations
+
+from typing import Any
+
+from homeassistant.components.sensor import SensorDeviceClass
+from homeassistant.config_entries import (
+    ConfigEntry,
+    ConfigFlow,
+    ConfigFlowResult,
+    OptionsFlowWithReload,
+)
+from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers.selector import (
+    EntitySelector,
+    EntitySelectorConfig,
+    SelectOptionDict,
+    SelectSelector,
+    SelectSelectorConfig,
+    SelectSelectorMode,
+)
+import voluptuous as vol
+
+from .const import CONF_HEAT_PUMP_ID, CONF_INDOOR_ENTITY, CONF_OUTDOOR_ENTITY, DOMAIN
+from .discovery import (
+    WeheatHeatPump,
+    WeheatKey,
+    async_get_heat_pump,
+    async_get_heat_pumps,
+    async_map_heat_pump_entities,
+)
+
+TEMPERATURE_SELECTOR = EntitySelector(
+    EntitySelectorConfig(domain="sensor", device_class=SensorDeviceClass.TEMPERATURE)
+)
+
+
+def _to_registry_id(hass: HomeAssistant, entity_id: str | None) -> str | None:
+    """Store a registry id when possible, so renaming the entity keeps working."""
+    if not entity_id:
+        return None
+    if (reg_entry := er.async_get(hass).async_get(entity_id)) is not None:
+        return reg_entry.id
+    # Not in the registry (e.g. a YAML template sensor without unique_id).
+    return entity_id
+
+
+def resolve_entity_id(hass: HomeAssistant, value: str | None) -> str | None:
+    """Turn a stored registry id or entity_id back into a current entity_id."""
+    if not value:
+        return None
+    return er.async_resolve_entity_id(er.async_get(hass), value) or value
+
+
+def _sources_schema(
+    hass: HomeAssistant,
+    pump: WeheatHeatPump | None,
+    current: dict[str, Any] | None = None,
+) -> vol.Schema:
+    """Build the form for the temperature sources, with sensible defaults."""
+    discovered = async_map_heat_pump_entities(hass, pump) if pump else {}
+    if current is not None:
+        outdoor = resolve_entity_id(hass, current.get(CONF_OUTDOOR_ENTITY))
+        indoor = resolve_entity_id(hass, current.get(CONF_INDOOR_ENTITY))
+    else:
+        outdoor = discovered.get(WeheatKey.OUTSIDE_TEMPERATURE)
+        indoor = discovered.get(WeheatKey.ROOM_TEMPERATURE)
+
+    outdoor_key = (
+        vol.Required(CONF_OUTDOOR_ENTITY, default=outdoor)
+        if outdoor
+        else vol.Required(CONF_OUTDOOR_ENTITY)
+    )
+    indoor_key = (
+        vol.Optional(CONF_INDOOR_ENTITY, description={"suggested_value": indoor})
+        if indoor
+        else vol.Optional(CONF_INDOOR_ENTITY)
+    )
+    return vol.Schema(
+        {outdoor_key: TEMPERATURE_SELECTOR, indoor_key: TEMPERATURE_SELECTOR}
+    )
+
+
+def _sources_options(hass: HomeAssistant, user_input: dict[str, Any]) -> dict:
+    """Normalise the sources form input into stored options."""
+    options: dict[str, Any] = {
+        CONF_OUTDOOR_ENTITY: _to_registry_id(hass, user_input[CONF_OUTDOOR_ENTITY])
+    }
+    if indoor := _to_registry_id(hass, user_input.get(CONF_INDOOR_ENTITY)):
+        options[CONF_INDOOR_ENTITY] = indoor
+    return options
+
+
+class WeheatInsightsConfigFlow(ConfigFlow, domain=DOMAIN):
+    """Set up insights for one Weheat heat pump."""
+
+    VERSION = 1
+
+    def __init__(self) -> None:
+        """Initialise the flow."""
+        self._pump: WeheatHeatPump | None = None
+
+    async def async_step_user(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Pick the heat pump to analyse."""
+        pumps = async_get_heat_pumps(self.hass)
+        if not pumps:
+            return self.async_abort(reason="no_heat_pumps")
+
+        configured = self._async_current_ids(include_ignore=False)
+        available = [pump for pump in pumps if pump.uuid not in configured]
+        if not available:
+            return self.async_abort(reason="already_configured")
+
+        if user_input is not None:
+            pump = async_get_heat_pump(self.hass, user_input[CONF_HEAT_PUMP_ID])
+            if pump is None:
+                return self.async_abort(reason="no_heat_pumps")
+            await self.async_set_unique_id(pump.uuid)
+            self._abort_if_unique_id_configured()
+            self._pump = pump
+            return await self.async_step_sources()
+
+        return self.async_show_form(
+            step_id="user",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        CONF_HEAT_PUMP_ID, default=available[0].uuid
+                    ): SelectSelector(
+                        SelectSelectorConfig(
+                            options=[
+                                SelectOptionDict(value=pump.uuid, label=pump.name)
+                                for pump in available
+                            ],
+                            mode=SelectSelectorMode.DROPDOWN,
+                        )
+                    )
+                }
+            ),
+        )
+
+    async def async_step_sources(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Choose the outdoor and (optional) indoor temperature sources."""
+        assert self._pump is not None
+        if user_input is not None:
+            return self.async_create_entry(
+                title=self._pump.name,
+                data={CONF_HEAT_PUMP_ID: self._pump.uuid},
+                options=_sources_options(self.hass, user_input),
+            )
+
+        return self.async_show_form(
+            step_id="sources",
+            data_schema=_sources_schema(self.hass, self._pump),
+            description_placeholders={"heat_pump": self._pump.name},
+        )
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(config_entry: ConfigEntry) -> OptionsFlowHandler:
+        """Return the options flow."""
+        return OptionsFlowHandler()
+
+
+class OptionsFlowHandler(OptionsFlowWithReload):
+    """Change the temperature sources later."""
+
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Edit the temperature sources."""
+        if user_input is not None:
+            return self.async_create_entry(data=_sources_options(self.hass, user_input))
+
+        pump = async_get_heat_pump(self.hass, self.config_entry.data[CONF_HEAT_PUMP_ID])
+        return self.async_show_form(
+            step_id="init",
+            data_schema=_sources_schema(
+                self.hass, pump, dict(self.config_entry.options)
+            ),
+        )
