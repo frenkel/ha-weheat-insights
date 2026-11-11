@@ -308,6 +308,48 @@ const CURVE_POINTS: [number, string][] = [
 /** Text safe inside a single-quoted Jinja string. */
 const jinja = (text: string) => text.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
 
+/** Jinja expression printing a number in the language's notation, '–' if none. */
+function jinjaNum(expr: string, sep: string, digits = 1): string {
+  return `{{ (('%.${digits}f' | format(${expr})) | replace('.', '${sep}')) if (${expr}) is not none else '–' }}`;
+}
+
+const OPERATING_GROUPS = ["heating", "dhw", "defrost", "standby", "other"] as const;
+
+/** Two markdown tables (counts per window; length and share over 30 days). */
+export function operatingTables(pump: HeatPumpConfig, t: Localize): string | null {
+  const groups = OPERATING_GROUPS.filter((g) => pump.insights[`operating_${g}`]);
+  if (!groups.length) return null;
+  const sep = t("decimal_separator");
+  const label = (g: string) => (g === "other" ? t("op_other") : g === "standby" ? t("standby") : t(g as never));
+  const attr = (g: string, name: string) => `state_attr('${pump.insights[`operating_${g}`]}', '${name}')`;
+  const heating = pump.insights.operating_heating;
+  return [
+    `**${t("op_counts")}**`,
+    "",
+    `| ${t("op_state")} | ${t("op_today")} | ${t("op_7d")} | ${t("op_30d")} |`,
+    "|:---|---:|---:|---:|",
+    ...groups.map(
+      (g) =>
+        `| ${label(g)} | {{ ${attr(g, "today_count")} }} | {{ ${attr(g, "7d_count")} }} | {{ ${attr(g, "30d_count")} }} |`,
+    ),
+    ...(heating
+      ? [
+          `| _${t("op_short")}_ | {{ ${attr("heating", "today_short_count")} }} | {{ ${attr("heating", "7d_short_count")} }} | {{ ${attr("heating", "30d_short_count")} }} |`,
+        ]
+      : []),
+    "",
+    `**${t("op_lengths")}**`,
+    "",
+    `| ${t("op_state")} | ${t("op_min")} | ${t("op_avg")} | ${t("op_max")} | ${t("op_hours")} | ${t("op_share")} |`,
+    "|:---|---:|---:|---:|---:|---:|",
+    ...groups.map(
+      (g) =>
+        `| ${label(g)} | ${jinjaNum(attr(g, "30d_min_minutes"), sep, 0)} | ${jinjaNum(attr(g, "30d_avg_minutes"), sep, 0)} | ` +
+        `${jinjaNum(attr(g, "30d_max_minutes"), sep, 0)} | ${jinjaNum(attr(g, "30d_hours"), sep, 1)} | ${jinjaNum(attr(g, "30d_share_percent"), sep, 1)} |`,
+    ),
+  ].join("\n");
+}
+
 /** Markdown table with a Jinja template, so it updates without a custom card. */
 export function curveTable(pump: HeatPumpConfig, t: Localize): string | null {
   const rows = CURVE_POINTS.filter(([, key]) => pump.insights[key]);
@@ -315,8 +357,7 @@ export function curveTable(pump: HeatPumpConfig, t: Localize): string | null {
   const first = pump.insights[rows[0][1]]!;
   const sep = t("decimal_separator");
   // One decimal in the language's notation (37,3 in Dutch); '–' when unknown.
-  const num = (expr: string) =>
-    `{{ (('%.1f' | format(${expr})) | replace('.', '${sep}')) if (${expr}) is not none else '–' }}`;
+  const num = (expr: string) => jinjaNum(expr, sep);
   const flagged = (e: string) =>
     `state_attr('${e}', 'extrapolated') and not state_attr('${e}', 'no_heat_needed')`;
   const lines = [
@@ -382,6 +423,55 @@ export function curveView(pump: HeatPumpConfig, t: Localize, index: number): Lov
   };
 }
 
+export function operationView(pump: HeatPumpConfig, t: Localize, index: number): LovelaceViewConfig {
+  const i = pump.insights;
+  const w = pump.weheat;
+  const tables = operatingTables(pump, t);
+  const label = (g: string) => (g === "other" ? t("op_other") : g === "standby" ? t("standby") : t(g as never));
+  const counters = (suffix: string, groups: readonly string[]) =>
+    present(groups.map((g) => entity(i[`${g}${suffix}`], label(g))));
+
+  const summary = section([
+    heading(t("operation"), "mdi:state-machine"),
+    tables ? { type: "markdown", content: tables } : null,
+  ]);
+  const perDay = section(
+    [
+      changeBars(t("op_periods_per_day"), counters("_periods_total", ["heating", "dhw", "defrost"]), "day", 30),
+      changeBars(t("op_hours_per_day"), counters("_time_total", ["heating", "dhw", "defrost", "standby"]), "day", 30),
+    ],
+    2,
+    true,
+  );
+  const degreeDays = pump.degree_days_statistic_id
+    ? { entity: pump.degree_days_statistic_id, name: t("degree_days") }
+    : null;
+  const defrost = section(
+    [
+      heading(t("op_defrost_vs_cold"), "mdi:snowflake-melt"),
+      changeBars(t("defrost"), counters("_periods_total", ["defrost"]), "day", 30, 6),
+      degreeDays ? changeBars(t("degree_days_per_day"), [degreeDays], "day", 30, 6) : null,
+    ],
+    2,
+  );
+  const timeline = section([
+    heading(t("op_timeline"), "mdi:timeline-clock-outline"),
+    historyGraph(t("state"), present([entity(w.heat_pump_state, t("state"))]), 24),
+  ]);
+  const explanation = section([
+    heading(t("title"), "mdi:information-outline"),
+    { type: "markdown", content: `${t("op_definitions")}\n\n_${t("disclaimer")}_` },
+  ]);
+  return {
+    title: `${pump.name} · ${t("operation")}`,
+    path: index === 0 ? "operation" : `operation-${index + 1}`,
+    icon: "mdi:state-machine",
+    type: "sections",
+    max_columns: 4,
+    sections: present([summary, perDay, defrost, timeline, explanation]),
+  };
+}
+
 function messageView(t: Localize, title: string, body: string): LovelaceViewConfig {
   return {
     title: t("title"),
@@ -402,6 +492,7 @@ export function generateDashboard(pumps: HeatPumpConfig[], t: Localize): Lovelac
       performanceView(pump, t, index),
       houseView(pump, t, index),
       curveView(pump, t, index),
+      operationView(pump, t, index),
       pumpView(pump, t, index),
     ]),
   };
