@@ -14,7 +14,7 @@ Assistant: no external server, no accounts, no telemetry.
 **Available now (0.1)**
 
 - A dashboard that builds itself, with no YAML. For each heat pump:
-  - Live overview: operating state, COP gauge, room, outdoor, supply and
+  - Live overview: operating state, COP gauge (while running), room, outdoor, supply and
     return temperatures, ΔT, electrical power and heat output.
   - History for the last 24 hours and hourly statistics for the last 7 days.
 - A **ΔT supply/return** sensor.
@@ -76,6 +76,17 @@ strategy:
 ```
 
 The dashboard updates itself when you add heat pumps or when sensors change.
+
+> [!TIP]
+> If the dashboard says *"Timeout waiting for strategy element
+> ll-strategy-dashboard-weheat-insights"*, your browser is still showing a page
+> from before the install or update. Do a hard refresh (Ctrl/Cmd + Shift + R);
+> in the companion app, use *Settings → Companion app → Debugging → Reset
+> frontend cache*.
+
+Negative values in the power and COP graphs are defrost cycles: the heat pump
+briefly takes heat back from the heating water to thaw the outdoor unit. They
+are real and are kept on purpose.
 The integration serves the dashboard code itself, so you don't need a
 separate frontend install.
 

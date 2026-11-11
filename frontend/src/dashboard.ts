@@ -59,6 +59,36 @@ function section(cards: (LovelaceCardConfig | null)[]): LovelaceSectionConfig | 
   return real.length > 1 ? { type: "grid", cards: real } : null;
 }
 
+/** Heat pump states in which an instantaneous COP means something. */
+const RUNNING_STATES = ["heating", "dhw", "legionella_prevention"];
+
+/**
+ * COP gauge, shown only while the pump runs: in standby the core sensor
+ * reports 0, which a red gauge would present as bad performance.
+ */
+function copGauge(
+  cop: string | undefined,
+  state: string | undefined,
+  t: Localize,
+): LovelaceCardConfig | null {
+  if (!cop) return null;
+  const gauge = {
+    type: "gauge",
+    entity: cop,
+    name: t("cop"),
+    min: 0,
+    max: 7,
+    needle: true,
+    severity: { red: 0, yellow: 3, green: 4 },
+  };
+  if (!state) return gauge;
+  return {
+    type: "conditional",
+    conditions: [{ condition: "state", entity: state, state: RUNNING_STATES }],
+    card: gauge,
+  };
+}
+
 /** The room temperature: the user's chosen sensor wins over the thermostat's. */
 function roomEntity(pump: HeatPumpConfig): string | undefined {
   return pump.indoor_entity_id ?? pump.weheat.thermostat_room_temperature;
@@ -79,25 +109,13 @@ export function pumpView(pump: HeatPumpConfig, t: Localize, index: number): Love
     entity(w.power_input, t("power_input")),
     entity(w.power_output, t("power_output")),
   ]);
-  const performance = present([
-    entity(w.cop, t("cop")),
-    entity(pump.insights.delta_t, t("delta_t")),
-  ]);
+  const cop = present([entity(w.cop, t("cop"))]);
+  const deltaT = present([entity(pump.insights.delta_t, t("delta_t"))]);
 
   const live = section([
     heading(t("live"), "mdi:heat-pump"),
     tile(w.heat_pump_state, t("state")),
-    w.cop
-      ? {
-          type: "gauge",
-          entity: w.cop,
-          name: t("cop"),
-          min: 0,
-          max: 7,
-          needle: true,
-          severity: { red: 0, yellow: 3, green: 4 },
-        }
-      : null,
+    copGauge(w.cop, w.heat_pump_state, t),
     tile(room, t("room")),
     tile(outdoor, t("outdoor")),
     tile(w.water_outlet_temperature, t("supply")),
@@ -111,16 +129,19 @@ export function pumpView(pump: HeatPumpConfig, t: Localize, index: number): Love
     heading(t("last_24h"), "mdi:clock-outline"),
     historyGraph(t("temperatures"), temperatures, 24),
     historyGraph(t("power"), power, 24),
-    historyGraph(`${t("cop")} / ${t("delta_t")}`, performance, 24),
+    historyGraph(t("cop"), cop, 24),
+    historyGraph(t("delta_t"), deltaT, 24),
     historyGraph(t("state"), present([entity(w.heat_pump_state, t("state"))]), 24),
   ]);
 
   // Seven days of raw history is heavy; hourly long-term statistics are not.
+  // No COP here: the hourly mean of an instantaneous COP includes idle
+  // periods (COP 0) and means nothing. Real COP per period is phase 2.
   const week = section([
     heading(t("last_7d"), "mdi:calendar-week"),
     statisticsGraph(t("temperatures"), temperatures, 7),
     statisticsGraph(t("power"), power, 7),
-    statisticsGraph(`${t("cop")} / ${t("delta_t")}`, performance, 7),
+    statisticsGraph(t("delta_t"), deltaT, 7),
   ]);
 
   return {
