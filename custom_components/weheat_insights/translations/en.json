@@ -139,6 +139,18 @@
       },
       "thermal_mass": {
         "name": "Thermal mass"
+      },
+      "curve_advice": {
+        "name": "Heating curve advice at {outdoor} °C"
+      },
+      "heating_electricity_per_degree_day_before": {
+        "name": "Heating electricity per degree day before curve change"
+      },
+      "heating_electricity_per_degree_day_after": {
+        "name": "Heating electricity per degree day after curve change"
+      },
+      "heating_curve_change_effect": {
+        "name": "Effect of heating curve change"
       }
     }
   },

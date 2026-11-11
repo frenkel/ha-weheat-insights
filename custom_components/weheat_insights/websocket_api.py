@@ -15,7 +15,7 @@ from .const import DOMAIN
 from .degree_day_statistics import statistic_id as degree_day_statistic_id
 from .discovery import WeheatKey
 from .history import MAX_COUNT, async_history
-from .house import async_supply_curve, heat_loss_payload
+from .house import async_supply_curve, curve_payload, heat_loss_payload
 
 
 @callback
@@ -162,4 +162,7 @@ async def ws_supply_curve(
     points = await async_supply_curve(
         hass, data.entities, data.outdoor_entity_id, msg["days"]
     )
-    connection.send_result(msg["id"], {"days": msg["days"], "points": points})
+    curves = curve_payload(data.house.data) if data.house is not None else None
+    connection.send_result(
+        msg["id"], {"days": msg["days"], "points": points, "curves": curves}
+    )

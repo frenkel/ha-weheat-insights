@@ -454,3 +454,29 @@ class HouseCoordinator(DataUpdateCoordinator[HouseData]):
         return CurveAdvice(
             points, current, emitters, settings.target_room_c, measured, None
         )
+
+
+def curve_payload(data: HouseData) -> dict:
+    """Return the current and advised curve for the heating-curve chart."""
+    curve = data.curve
+    if curve is None:
+        return {"current": [], "advice": [], "reason": "no_data"}
+    return {
+        "current": [
+            {"outdoor_c": point, "supply_c": round(value, 1)}
+            for point, value in curve.current.items()
+            if value is not None
+        ],
+        "advice": [
+            {
+                "outdoor_c": p.outdoor_c,
+                "supply_c": round(p.supply_c, 1),
+                "low_c": round(p.supply_low_c, 1),
+                "high_c": round(p.supply_high_c, 1),
+                "extrapolated": p.extrapolated,
+            }
+            for p in curve.points
+        ],
+        "reason": curve.reason,
+        "target_c": curve.target_c,
+    }

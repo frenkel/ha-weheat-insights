@@ -78,6 +78,18 @@
       },
       "thermal_mass": {
         "default": "mdi:weight"
+      },
+      "curve_advice": {
+        "default": "mdi:chart-bell-curve-cumulative"
+      },
+      "heating_electricity_per_degree_day_before": {
+        "default": "mdi:history"
+      },
+      "heating_electricity_per_degree_day_after": {
+        "default": "mdi:update"
+      },
+      "heating_curve_change_effect": {
+        "default": "mdi:swap-vertical"
       }
     }
   }

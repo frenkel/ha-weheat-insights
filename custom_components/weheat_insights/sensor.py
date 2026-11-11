@@ -35,6 +35,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util.unit_conversion import TemperatureConverter
 
 from . import WeheatInsightsConfigEntry
+from .calculations.heating_curve import WEHEAT_CURVE_POINTS
 from .calculations.temperature import delta_t
 from .coordinator import InsightsData, PeriodResult, WeheatInsightsCoordinator
 from .discovery import WeheatHeatPump, WeheatKey
@@ -68,6 +69,14 @@ async def async_setup_entry(
         entities.extend(
             HouseSensor(data.pump, data.house, description)
             for description in HOUSE_SENSORS
+        )
+        entities.extend(
+            CurveAdviceSensor(data.pump, data.house, outdoor)
+            for outdoor in WEHEAT_CURVE_POINTS
+        )
+        entities.extend(
+            HouseSensor(data.pump, data.house, description)
+            for description in COMPARISON_SENSORS
         )
     async_add_entities(entities)
 
@@ -355,6 +364,7 @@ class HouseSensorDescription(SensorEntityDescription):
     """A figure from the house analysis."""
 
     value_fn: Callable[[HouseData], float | None]
+    attrs_fn: Callable[[HouseData], dict[str, Any]] | None = None
 
 
 def _house_attrs(data: HouseData) -> dict[str, Any]:
@@ -471,6 +481,129 @@ class HouseSensor(
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return the quality of the estimate."""
+        if self.entity_description.attrs_fn is not None:
+            return self.entity_description.attrs_fn(self.coordinator.data)
         if self.entity_description.key.startswith(("cool_down", "thermal")):
             return _cool_down_attrs(self.coordinator.data)
         return _house_attrs(self.coordinator.data)
+
+
+def _comparison_attrs(data: HouseData) -> dict[str, Any]:
+    comparison = data.comparison
+    if comparison is None:
+        return {"curve_changed_on": None}
+    attrs: dict[str, Any] = {"curve_changed_on": comparison.changed_on.isoformat()}
+    for name, side in (("before", comparison.before), ("after", comparison.after)):
+        if side is None:
+            attrs[f"{name}_days"] = 0
+            continue
+        attrs |= {
+            f"{name}_start": side.start.isoformat(),
+            f"{name}_end": side.end.isoformat(),
+            f"{name}_days": side.days,
+            f"{name}_degree_days": round(side.degree_days, 1),
+            f"{name}_electricity_kwh": round(side.electricity_kwh, 1),
+            f"{name}_cop_heating": _round(side.cop, 2),
+        }
+    return attrs
+
+
+def _side_value(data: HouseData, side: str) -> float | None:
+    if data.comparison is None:
+        return None
+    figures = getattr(data.comparison, side)
+    return None if figures is None else figures.electricity_per_degree_day
+
+
+COMPARISON_SENSORS: list[HouseSensorDescription] = [
+    HouseSensorDescription(
+        key="heating_electricity_per_degree_day_before",
+        translation_key="heating_electricity_per_degree_day_before",
+        native_unit_of_measurement=UNIT_HEAT_PER_DEGREE_DAY,
+        suggested_display_precision=2,
+        value_fn=lambda d: _side_value(d, "before"),
+        attrs_fn=_comparison_attrs,
+    ),
+    HouseSensorDescription(
+        key="heating_electricity_per_degree_day_after",
+        translation_key="heating_electricity_per_degree_day_after",
+        native_unit_of_measurement=UNIT_HEAT_PER_DEGREE_DAY,
+        suggested_display_precision=2,
+        value_fn=lambda d: _side_value(d, "after"),
+        attrs_fn=_comparison_attrs,
+    ),
+    HouseSensorDescription(
+        key="heating_curve_change_effect",
+        translation_key="heating_curve_change_effect",
+        native_unit_of_measurement="%",
+        suggested_display_precision=0,
+        value_fn=lambda d: (
+            None if d.comparison is None else d.comparison.change_percent
+        ),
+        attrs_fn=_comparison_attrs,
+    ),
+]
+
+
+def curve_point_key(outdoor: float) -> str:
+    """Entity key for a curve point, e.g. curve_advice_minus_20."""
+    value = int(outdoor)
+    return f"curve_advice_{'minus_' if value < 0 else ''}{abs(value)}"
+
+
+class CurveAdviceSensor(
+    CoordinatorEntity[HouseCoordinator], WeheatInsightsEntity, SensorEntity
+):
+    """Advised water temperature at one point of the Weheat heating curve."""
+
+    _attr_device_class = SensorDeviceClass.TEMPERATURE
+    _attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
+    _attr_suggested_display_precision = 1
+
+    def __init__(
+        self, pump: WeheatHeatPump, coordinator: HouseCoordinator, outdoor: float
+    ) -> None:
+        """Initialise the sensor."""
+        CoordinatorEntity.__init__(self, coordinator)
+        WeheatInsightsEntity.__init__(self, pump, curve_point_key(outdoor))
+        self._outdoor = outdoor
+        self._attr_translation_key = "curve_advice"
+        self._attr_translation_placeholders = {"outdoor": f"{outdoor:g}"}
+
+    def _point(self):
+        curve = self.coordinator.data.curve
+        if curve is None:
+            return None
+        return next((p for p in curve.points if p.outdoor_c == self._outdoor), None)
+
+    @property
+    def native_value(self) -> float | None:
+        """Advised supply temperature, one decimal (as the web portal accepts)."""
+        point = self._point()
+        return None if point is None else round(point.supply_c, 1)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Return the app value, range, current setting and caveats."""
+        curve = self.coordinator.data.curve
+        point = self._point()
+        attrs: dict[str, Any] = {"outdoor_temperature": self._outdoor}
+        if curve is not None:
+            current = curve.current.get(self._outdoor)
+            attrs |= {
+                "current": None if current is None else round(current, 1),
+                "target_room_temperature": curve.target_c,
+                "measured_indoor_temperature": _round(curve.measured_indoor_c, 1),
+            }
+            if curve.reason is not None:
+                attrs["no_advice_reason"] = curve.reason
+        if point is not None:
+            attrs |= {
+                "app": point.app_c,
+                "range_low": round(point.supply_low_c, 1),
+                "range_high": round(point.supply_high_c, 1),
+                "heat_demand_kw": round(point.heat_kw, 2),
+                "extrapolated": point.extrapolated,
+                "no_heat_needed": point.no_heat_needed,
+            }
+        return attrs

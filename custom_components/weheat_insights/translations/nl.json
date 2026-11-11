@@ -139,6 +139,18 @@
       },
       "thermal_mass": {
         "name": "Warmtecapaciteit"
+      },
+      "curve_advice": {
+        "name": "Stooklijnadvies bij {outdoor} °C"
+      },
+      "heating_electricity_per_degree_day_before": {
+        "name": "Stroom verwarming per graaddag voor stooklijnwijziging"
+      },
+      "heating_electricity_per_degree_day_after": {
+        "name": "Stroom verwarming per graaddag na stooklijnwijziging"
+      },
+      "heating_curve_change_effect": {
+        "name": "Effect stooklijnwijziging"
       }
     }
   },

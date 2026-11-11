@@ -63,11 +63,13 @@ async def test_heat_loss_from_statistics(hass: HomeAssistant, freezer) -> None:
     sensors = dict(WEHEAT_SENSORS)
     sensors["energy_output_heating"] = ("energy_output_heating", "kWh", "energy")
     sensors["electricity_used_heating"] = ("electricity_used_heating", "kWh", "energy")
+    sensors["thermostat_water_setpoint"] = ("setpoint", "°C", "temperature")
     weheat = add_weheat_pump(hass, sensors=sensors)
 
     days = 30
     start = dt_util.start_of_local_day() - timedelta(days=days)
     heat_rows, el_rows, out_rows, room_rows = [], [], [], []
+    supply_rows, return_rows, setpoint_rows = [], [], []
     heat_sum = el_sum = 0.0
     for d in range(days):
         outdoor = 12 - (d % 13)
@@ -82,6 +84,12 @@ async def test_heat_loss_from_statistics(hass: HomeAssistant, freezer) -> None:
             el_rows.append({"start": when, "state": el_sum, "sum": el_sum})
             out_rows.append({"start": when, "mean": outdoor})
             room_rows.append({"start": when, "mean": indoor})
+            # Emitters: Q = 0.12 * (mean water - room) ** 1.2, ΔT = 1.5 K per kW.
+            heat_kw = daily / 24
+            mean_water = indoor + (heat_kw / 0.12) ** (1 / 1.2)
+            supply_rows.append({"start": when, "mean": mean_water + 0.75 * heat_kw})
+            return_rows.append({"start": when, "mean": mean_water - 0.75 * heat_kw})
+            setpoint_rows.append({"start": when, "mean": 27 + (9 - outdoor) * 0.5})
     ids = weheat.entity_ids
     async_import_statistics(
         hass, _meta(ids["energy_output_heating"], mean=False, unit="kWh"), heat_rows
@@ -95,6 +103,12 @@ async def test_heat_loss_from_statistics(hass: HomeAssistant, freezer) -> None:
     async_import_statistics(
         hass, _meta(ids["thermostat_room_temperature"], mean=True, unit="°C"), room_rows
     )
+    for key, rows in (
+        ("water_outlet_temperature", supply_rows),
+        ("water_inlet_temperature", return_rows),
+        ("thermostat_water_setpoint", setpoint_rows),
+    ):
+        async_import_statistics(hass, _meta(ids[key], mean=True, unit="°C"), rows)
     await async_wait_recording_done(hass)
 
     entry = MockConfigEntry(
@@ -120,6 +134,19 @@ async def test_heat_loss_from_statistics(hass: HomeAssistant, freezer) -> None:
     assert float(design.state) == pytest.approx(6.0, abs=0.2)
     balance = hass.states.get(_entity(hass, "balance_point"))
     assert float(balance.state) == pytest.approx(20 - 10 / 4.8, abs=0.5)
+
+    # Heating-curve advice: the synthetic emitters need exactly the water
+    # temperature they were built with to deliver the demand at 9 °C.
+    advice = hass.states.get(_entity(hass, "curve_advice_9"))
+    demand = (4.8 * 11 - 10) / 24
+    expected = 20 + (demand / 0.12) ** (1 / 1.2) + 0.75 * demand
+    assert float(advice.state) == pytest.approx(expected, abs=0.6)
+    assert advice.attributes["app"] >= float(advice.state)
+    assert advice.attributes["current"] == pytest.approx(27.0, abs=0.3)
+    assert advice.attributes["extrapolated"] is False
+    cold = hass.states.get(_entity(hass, "curve_advice_minus_20"))
+    assert cold.attributes["extrapolated"] is True
+    assert cold.attributes["current"] is None
 
     # Heating ran every hour: no cool-down episodes, so no estimate yet.
     tau = hass.states.get(_entity(hass, "cool_down_time_constant"))
@@ -220,7 +247,9 @@ async def test_websocket_heat_loss_and_supply_curve(
     )
     await hass.async_block_till_done(wait_background_tasks=True)
     _, result = connection.send_result.call_args.args
-    assert result == {"days": 30, "points": []}
+    assert result["points"] == []
+    assert result["curves"]["advice"] == []
+    assert result["curves"]["reason"] == "no_heat_loss"
 
     connection = MagicMock()
     ws_heat_loss(hass, connection, {"id": 3, "type": "x", "entry_id": "nope"})
