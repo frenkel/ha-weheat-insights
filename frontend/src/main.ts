@@ -9,6 +9,7 @@
 import { errorDashboard, generateDashboard } from "./dashboard";
 import { localizer } from "./localize";
 import { PERFORMANCE_CARD_TAG, WeheatInsightsPerformanceCard } from "./performance-card";
+import { OPERATING_CARD_TAG, WeheatInsightsOperatingCard } from "./operating-card";
 import { SCATTER_CARD_TAG, WeheatInsightsScatterCard } from "./scatter-card";
 import type { DashboardConfigResponse, HomeAssistant, LovelaceConfig } from "./types";
 
@@ -37,6 +38,10 @@ if (!customElements.get(PERFORMANCE_CARD_TAG)) {
   customElements.define(PERFORMANCE_CARD_TAG, WeheatInsightsPerformanceCard);
 }
 
+if (!customElements.get(OPERATING_CARD_TAG)) {
+  customElements.define(OPERATING_CARD_TAG, WeheatInsightsOperatingCard);
+}
+
 if (!customElements.get(SCATTER_CARD_TAG)) {
   customElements.define(SCATTER_CARD_TAG, WeheatInsightsScatterCard);
 }
@@ -62,6 +67,14 @@ if (!window.customCards.some((c) => c.type === SCATTER_CARD_TAG)) {
     type: SCATTER_CARD_TAG,
     name: "Weheat Insights scatter",
     description: "Heat loss of the house or supply vs outdoor temperature (unofficial)",
+  });
+}
+
+if (!window.customCards.some((c) => c.type === OPERATING_CARD_TAG)) {
+  window.customCards.push({
+    type: OPERATING_CARD_TAG,
+    name: "Weheat Insights operation",
+    description: "Time per operating state and number and length of periods (unofficial)",
   });
 }
 

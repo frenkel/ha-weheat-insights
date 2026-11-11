@@ -8,6 +8,7 @@
  */
 import type { Localize } from "./localize";
 import { PERFORMANCE_CARD_TAG } from "./performance-card";
+import { OPERATING_CARD_TAG, OPERATING_STATES } from "./operating-card";
 import { SCATTER_CARD_TAG } from "./scatter-card";
 import type {
   HeatPumpConfig,
@@ -315,37 +316,6 @@ function jinjaNum(expr: string, sep: string, digits = 1): string {
   return `{{ (('%.${digits}f' | format(${expr})) | replace('.', '${sep}')) if (${expr}) is not none else '–' }}`;
 }
 
-const OPERATING_GROUPS = ["heating", "dhw", "defrost", "standby", "legionella"] as const;
-
-/** Two markdown tables (counts per window; length and share over 30 days). */
-export function operatingTables(pump: HeatPumpConfig, t: Localize): string | null {
-  const groups = OPERATING_GROUPS.filter((g) => pump.insights[`operating_${g}`]);
-  if (!groups.length) return null;
-  const sep = t("decimal_separator");
-  const label = (g: string) =>
-    noWrap(g === "standby" ? t("standby") : t(g as never));
-  const attr = (g: string, name: string) => `state_attr('${pump.insights[`operating_${g}`]}', '${name}')`;
-  return [
-    `**${t("op_counts")}**`,
-    "",
-    `| ${t("op_state")} | ${t("op_today")} | ${t("op_7d")} | ${t("op_30d")} |`,
-    "|:---|---:|---:|---:|",
-    ...groups.map(
-      (g) =>
-        `| ${label(g)} | {{ ${attr(g, "today_count")} }} | {{ ${attr(g, "7d_count")} }} | {{ ${attr(g, "30d_count")} }} |`,
-    ),
-    "",
-    `**${t("op_lengths")}**`,
-    "",
-    `| ${t("op_state")} | ${t("op_min")} | ${t("op_avg")} | ${t("op_max")} | ${t("op_hours")} | ${t("op_share")} |`,
-    "|:---|---:|---:|---:|---:|---:|",
-    ...groups.map(
-      (g) =>
-        `| ${label(g)} | ${jinjaNum(attr(g, "30d_min_minutes"), sep, 0)} | ${jinjaNum(attr(g, "30d_avg_minutes"), sep, 0)} | ` +
-        `${jinjaNum(attr(g, "30d_max_minutes"), sep, 0)} | ${jinjaNum(attr(g, "30d_hours"), sep, 1)} | ${jinjaNum(attr(g, "30d_share_percent"), sep, 1)} |`,
-    ),
-  ].join("\n");
-}
 
 /** Markdown table with a Jinja template, so it updates without a custom card. */
 export function curveTable(pump: HeatPumpConfig, t: Localize): string | null {
@@ -425,14 +395,19 @@ export function curveView(pump: HeatPumpConfig, t: Localize, index: number): Lov
 export function operationView(pump: HeatPumpConfig, t: Localize, index: number): LovelaceViewConfig {
   const i = pump.insights;
   const w = pump.weheat;
-  const tables = operatingTables(pump, t);
   const label = (g: string) => (g === "standby" ? t("standby") : t(g as never));
   const counters = (suffix: string, groups: readonly string[]) =>
     present(groups.map((g) => entity(i[`${g}${suffix}`], label(g))));
 
+  const cardEntities = Object.fromEntries(
+    OPERATING_STATES.filter((g) => i[`operating_${g}`]).map((g) => [g, i[`operating_${g}`]]),
+  );
   const summary = section(
-    [heading(t("operation"), "mdi:state-machine"),
-      tables ? { type: "markdown", content: tables, grid_options: { columns: "full" } } : null,
+    [
+      heading(t("operation"), "mdi:state-machine"),
+      Object.keys(cardEntities).length
+        ? { type: `custom:${OPERATING_CARD_TAG}`, entities: cardEntities, grid_options: { columns: "full" } }
+        : null,
     ],
     2,
   );
