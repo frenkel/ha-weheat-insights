@@ -604,14 +604,13 @@ class CurveAdviceSensor(
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        """Return the range, current setting and caveats."""
+        """Return the range, the entered current value and caveats."""
         curve = self.coordinator.data.curve
         point = self._point()
         attrs: dict[str, Any] = {"outdoor_temperature": self._outdoor}
         if curve is not None:
-            current = curve.current.get(self._outdoor)
             attrs |= {
-                "current": None if current is None else round(current, 1),
+                "current": curve.current.get(self._outdoor),
                 "target_room_temperature": curve.target_c,
                 "emitter_type": curve.emitter_type,
                 "measured_indoor_temperature": _round(curve.measured_indoor_c, 1),

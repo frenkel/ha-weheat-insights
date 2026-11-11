@@ -30,7 +30,7 @@ interface CurvePoint {
 
 interface SupplyCurveResponse {
   days: number;
-  curves: { current: CurvePoint[]; advice: CurvePoint[]; reason: string | null } | null;
+  curves: { current?: CurvePoint[]; advice: CurvePoint[]; reason: string | null } | null;
   points: { time: string; outdoor_c: number; supply_c: number; delta_t_k: number; heating_kwh: number }[];
 }
 
@@ -239,23 +239,17 @@ export class WeheatInsightsScatterCard extends LitElement {
     if (curves?.advice.length) {
       lines.push({ cls: "advice", points: toXY(curves.advice), band: [toXY(curves.advice, "low_c"), toXY(curves.advice, "high_c")] });
     }
-    if (curves && curves.current.length > 1) lines.push({ cls: "current", points: toXY(curves.current) });
-    // With only one known point of the current curve there is no line yet:
-    // show that point, so it is still visible where the curve is now.
-    const markers =
-      curves && curves.current.length === 1
-        ? toXY(curves.current).map((p) => ({
-            ...p,
-            tip: `${t("current_curve")}: ${fmt.format(p.x)} °C → ${fmt.format(p.y)} °C`,
-          }))
-        : [];
-    return html`${this._chart(dots, { xLabel: t("outdoor_temp"), yLabel: t("supply_temp"), curves: lines, markers })}
+
+    // The user's current curve, as entered under Configure.
+    if (curves?.current && curves.current.length > 1) {
+      lines.push({ cls: "current", points: toXY(curves.current) });
+    }
+    return html`${this._chart(dots, { xLabel: t("outdoor_temp"), yLabel: t("supply_temp"), curves: lines })}
       <div class="legend">
         <span>ΔT ${fmt.format(lo)} K</span>
         <i class="gradient"></i>
         <span>${fmt.format(hi)} K</span>
         ${lines.some((l) => l.cls === "current") ? html`<span><i class="line current"></i>${t("current_curve")}</span>` : nothing}
-        ${markers.length ? html`<span><i class="marker"></i>${t("current_curve")}</span>` : nothing}
         ${lines.some((l) => l.cls === "advice") ? html`<span><i class="line advice"></i>${t("advised_curve")}</span>` : nothing}
       </div>`;
   }
@@ -268,12 +262,11 @@ export class WeheatInsightsScatterCard extends LitElement {
       includeZeroY?: boolean;
       line?: (x: number) => number;
       curves?: ChartLine[];
-      markers?: { x: number; y: number; tip: string }[];
     },
   ) {
     if (!dots.length) return html`<div class="message">${localizer(this.hass!)("no_data")}</div>`;
-    const xs = [...dots.map((d) => d.x), ...(opts.markers ?? []).map((m) => m.x)];
-    const ys = [...dots.map((d) => d.y), ...(opts.markers ?? []).map((m) => m.y)];
+    const xs = dots.map((d) => d.x);
+    const ys = dots.map((d) => d.y);
     const xTicks = niceTicks(Math.min(...xs), Math.max(...xs));
     const yTicks = niceTicks(opts.includeZeroY ? Math.min(0, ...ys) : Math.min(...ys), Math.max(...ys));
     const [x0, x1] = [xTicks[0], xTicks[xTicks.length - 1]];
@@ -301,15 +294,8 @@ export class WeheatInsightsScatterCard extends LitElement {
         </circle>`,
       )}
       ${(opts.curves ?? []).map((curve) => {
-        // Curves are drawn over the measured outdoor range only.
-        // The current curve is only known between its observed points; the
-        // advice is defined at every curve point and may span the whole chart.
         const steps = 40;
-        const known = curve.points.map((p) => p.x);
-        const from = curve.band ? x0 : Math.max(x0, Math.min(...known));
-        const to = curve.band ? x1 : Math.min(x1, Math.max(...known));
-        if (to <= from) return nothing;
-        const xsAt = Array.from({ length: steps + 1 }, (_, k) => from + ((to - from) * k) / steps);
+        const xsAt = Array.from({ length: steps + 1 }, (_, k) => x0 + ((x1 - x0) * k) / steps);
         const path = (pts: { x: number; y: number }[]) =>
           xsAt.map((x) => `${sx(x)},${sy(clampY(curveAt(pts, x) ?? y0))}`).join(" ");
         const band = curve.band
@@ -317,9 +303,6 @@ export class WeheatInsightsScatterCard extends LitElement {
           : nothing;
         return svg`${band}<polyline class="curve ${curve.cls}" points=${path(curve.points)}></polyline>`;
       })}
-      ${(opts.markers ?? []).map(
-        (m) => svg`<circle class="marker" cx=${sx(m.x)} cy=${sy(m.y)} r="7"><title>${m.tip}</title></circle>`,
-      )}
       ${opts.line
         ? svg`<line class="fit" x1=${sx(x0)} y1=${sy(clampY(opts.line(x0)))} x2=${sx(x1)} y2=${sy(clampY(opts.line(x1)))}></line>`
         : nothing}
@@ -380,28 +363,13 @@ export class WeheatInsightsScatterCard extends LitElement {
       stroke: var(--secondary-text-color);
       stroke-dasharray: 6 4;
     }
-    circle.marker {
-      fill: var(--card-background-color, #fff);
-      fill-opacity: 1;
-      stroke: var(--primary-text-color);
-      stroke-width: 3;
-    }
-    .marker {
-      display: inline-block;
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      border: 2px solid var(--primary-text-color);
-      margin-right: 6px;
-      vertical-align: middle;
+    .line.current {
+      background: repeating-linear-gradient(90deg, var(--secondary-text-color) 0 6px, transparent 6px 9px);
     }
     polygon.band {
       fill: var(--primary-text-color);
       fill-opacity: 0.08;
       stroke: none;
-    }
-    .line.current {
-      background: repeating-linear-gradient(90deg, var(--secondary-text-color) 0 6px, transparent 6px 9px);
     }
     line.fit {
       stroke: var(--primary-text-color);

@@ -21,7 +21,7 @@ Assistant: no external server, no accounts, no telemetry.
     mass; degree days and heating per degree day compared with last season.
   - **Heating curve**: advice for the five points of the Weheat heating
     curve (−20, 9, 15, 20 and 25 °C outdoor) that just keeps your target room
-    temperature; supply temperature against
+    temperature, next to your current curve if you enter it under Configure; supply temperature against
     outdoor temperature with both curves; before/after comparison of a curve
     change, corrected for weather.
   - **Operation**: how the last 30 days were spent per state (heating, hot
@@ -128,8 +128,7 @@ entry_id: <entry_id>
 mode: heat_loss
 
 # Supply temperature against outdoor temperature, coloured by ΔT,
-# with the current heating curve (a dot while only one point is known)
-# and the advised heating curve
+# with the advised heating curve
 type: custom:weheat-insights-scatter-card
 entry_id: <entry_id>
 mode: supply_curve
@@ -223,9 +222,7 @@ The advice is given with one decimal, which the Weheat web portal accepts;
 in the app, which only takes whole degrees, round up so the house stays warm.
 The range comes from the 95 % interval of the heat-loss coefficient. Points
 far outside the outdoor temperatures you have measured are marked as
-extrapolated. The chart also shows your current curve where it is known: it
-is read from the Weheat water setpoint against the heat pump's own outdoor
-sensor over the last 14 days (a dot while only one curve point is known).
+extrapolated.
 
 The heating-curve chart shows the last 12 months (the same hours the advice
 is calibrated on) and only uses hours in which the pump mainly heated the
@@ -233,10 +230,13 @@ house (at least 0.5 kWh space heating, no hot water), and skips the hour after
 hot water, when left-over DHW heat can be pushed into the heating circuit at a
 high supply temperature.
 
-Treat the advice as a starting point, not a guarantee: change the curve in
-small steps and check the rooms stay warm. Set the date of the change under
-**Configure** to compare heating electricity per degree day (and heating
-COP) for up to 60 days before and after.
+Enter your current curve under **Configure** to see it next to the advice
+(an extra "Current" column and a dashed line in the chart). Treat the advice
+as a starting point, not a guarantee: change the curve in small steps and
+check the rooms stay warm. When you then enter the new values under
+**Configure**, the change date is stored automatically and the before/after
+tiles compare heating electricity per degree day (and heating COP) for up to
+60 days before and after.
 
 ### Operating states
 
@@ -273,7 +273,10 @@ change:
 - the degree-day base temperature and whether degree days are weighted;
 - the target room temperature for the heating-curve advice;
 - the heating system: radiators, underfloor heating or both;
-- the date of a heating-curve change, for the before/after comparison.
+- your current Weheat heating curve (the five water temperatures from the
+  app or portal), to compare it with the advice in the table and chart;
+- the date of a heating-curve change, for the before/after comparison. It is
+  filled in automatically when you change your current curve.
 
 ## How it works
 

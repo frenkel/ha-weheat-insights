@@ -29,3 +29,13 @@ CONF_CURVE_CHANGED_ON: Final = "curve_changed_on"
 
 DEFAULT_TARGET_ROOM_TEMPERATURE: Final = 20.0
 DEFAULT_EMITTER_TYPE: Final = "mixed"
+
+# The current Weheat heating curve, entered by the user: water temperature at
+# each outdoor temperature of the curve.
+CONF_CURRENT_CURVE: Final = {
+    -20.0: "current_curve_minus_20",
+    9.0: "current_curve_9",
+    15.0: "current_curve_15",
+    20.0: "current_curve_20",
+    25.0: "current_curve_25",
+}

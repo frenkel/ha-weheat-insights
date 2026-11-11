@@ -39,7 +39,12 @@
           "weighted_degree_days": "Gewogen graaddagen",
           "target_room_temperature": "Gewenste kamertemperatuur",
           "emitter_type": "Afgiftesysteem",
-          "curve_changed_on": "Stooklijn aangepast op"
+          "curve_changed_on": "Stooklijn aangepast op",
+          "current_curve_minus_20": "Huidige stooklijn bij −20 °C",
+          "current_curve_9": "Huidige stooklijn bij 9 °C",
+          "current_curve_15": "Huidige stooklijn bij 15 °C",
+          "current_curve_20": "Huidige stooklijn bij 20 °C",
+          "current_curve_25": "Huidige stooklijn bij 25 °C"
         },
         "data_description": {
           "outdoor_entity": "Gebruikt voor graaddagen en de warmteverliesanalyse.",
@@ -50,7 +55,12 @@
           "weighted_degree_days": "Telt november–februari ×1,1, maart en oktober ×1,0 en april–september ×0,8 (Nederlandse conventie).",
           "target_room_temperature": "De kamertemperatuur waar het stooklijnadvies op mikt.",
           "emitter_type": "Hoe de warmte wordt afgegeven; bepaalt hoeveel minder warmte een lagere watertemperatuur geeft.",
-          "curve_changed_on": "Optioneel. Vergelijkt het stroomverbruik voor verwarming per graaddag voor en na deze datum."
+          "curve_changed_on": "Optioneel. Vergelijkt het stroomverbruik voor verwarming per graaddag voor en na deze datum. Wordt automatisch ingevuld als je je huidige stooklijn hieronder aanpast.",
+          "current_curve_minus_20": "Watertemperatuur van je huidige Weheat-stooklijn bij deze buitentemperatuur (uit de app of het portaal). Optioneel; pas je hem later aan, dan wordt de wijzigingsdatum automatisch opgeslagen.",
+          "current_curve_9": "Watertemperatuur van je huidige Weheat-stooklijn bij deze buitentemperatuur (uit de app of het portaal). Optioneel; pas je hem later aan, dan wordt de wijzigingsdatum automatisch opgeslagen.",
+          "current_curve_15": "Watertemperatuur van je huidige Weheat-stooklijn bij deze buitentemperatuur (uit de app of het portaal). Optioneel; pas je hem later aan, dan wordt de wijzigingsdatum automatisch opgeslagen.",
+          "current_curve_20": "Watertemperatuur van je huidige Weheat-stooklijn bij deze buitentemperatuur (uit de app of het portaal). Optioneel; pas je hem later aan, dan wordt de wijzigingsdatum automatisch opgeslagen.",
+          "current_curve_25": "Watertemperatuur van je huidige Weheat-stooklijn bij deze buitentemperatuur (uit de app of het portaal). Optioneel; pas je hem later aan, dan wordt de wijzigingsdatum automatisch opgeslagen."
         }
       }
     }

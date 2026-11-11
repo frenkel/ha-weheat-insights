@@ -8,6 +8,7 @@ from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
+from custom_components.weheat_insights.config_flow import with_change_date
 from custom_components.weheat_insights.const import (
     CONF_HEAT_PUMP_ID,
     CONF_INDOOR_ENTITY,
@@ -146,3 +147,55 @@ async def test_options_flow(
     assert settings.target_room_c == 21.0
     assert settings.emitter_type == "radiators"
     assert settings.curve_changed_on == date(2026, 11, 1)
+
+
+def test_change_date_is_stored_when_the_current_curve_changes() -> None:
+    old = {"current_curve_9": 26.0, "current_curve_minus_20": 42.0}
+    changed = {"current_curve_9": 25.0, "current_curve_minus_20": 42.0}
+    assert with_change_date(old, changed, "2026-11-12")["curve_changed_on"] == (
+        "2026-11-12"
+    )
+    # Same curve: no date.
+    assert "curve_changed_on" not in with_change_date(old, dict(old), "2026-11-12")
+    # First time entered: not a change.
+    assert "curve_changed_on" not in with_change_date({}, changed, "2026-11-12")
+    # A date picked by the user in the same go wins.
+    picked = {**changed, "curve_changed_on": "2026-11-01"}
+    assert with_change_date(old, picked, "2026-11-12")["curve_changed_on"] == (
+        "2026-11-01"
+    )
+
+
+async def test_options_flow_stores_current_curve(
+    hass: HomeAssistant, weheat: FakeWeheat, insights_entry: MockConfigEntry
+) -> None:
+    await hass.config.async_set_time_zone("Europe/Amsterdam")
+    await hass.config_entries.async_setup(insights_entry.entry_id)
+    await hass.async_block_till_done()
+    base = {
+        CONF_OUTDOOR_ENTITY: weheat.entity_ids["outside_temperature"],
+        "season_start_month": "9",
+        "season_end_month": "5",
+        "degree_day_base": 18.0,
+        "weighted_degree_days": True,
+        "target_room_temperature": 20.0,
+        "emitter_type": "radiators",
+    }
+
+    async def submit(values):
+        flow = await hass.config_entries.options.async_init(insights_entry.entry_id)
+        result = await hass.config_entries.options.async_configure(
+            flow["flow_id"], {**base, **values}
+        )
+        await hass.async_block_till_done()
+        return result
+
+    await submit({"current_curve_9": 26, "current_curve_minus_20": 42})
+    settings = insights_entry.runtime_data.coordinator.settings
+    assert settings.current_curve == {-20.0: 42.0, 9.0: 26.0}
+    assert settings.curve_changed_on is None
+
+    await submit({"current_curve_9": 25, "current_curve_minus_20": 42})
+    settings = insights_entry.runtime_data.coordinator.settings
+    assert settings.current_curve[9.0] == 25.0
+    assert settings.curve_changed_on is not None

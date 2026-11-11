@@ -26,9 +26,11 @@ from homeassistant.helpers.selector import (
     SelectSelectorConfig,
     SelectSelectorMode,
 )
+from homeassistant.util import dt as dt_util
 import voluptuous as vol
 
 from .const import (
+    CONF_CURRENT_CURVE,
     CONF_CURVE_CHANGED_ON,
     CONF_DEGREE_DAY_BASE,
     CONF_EMITTER_TYPE,
@@ -132,6 +134,49 @@ EMITTER_SELECTOR = SelectSelector(
         translation_key="emitter_type",
     )
 )
+
+
+CURVE_SELECTOR = NumberSelector(
+    NumberSelectorConfig(
+        min=10, max=70, step=0.1, unit_of_measurement="°C", mode=NumberSelectorMode.BOX
+    )
+)
+
+
+def _curve_schema(current: dict[str, Any]) -> dict:
+    """Return optional fields for the current heating curve, one per point."""
+    return {
+        vol.Optional(key, description={"suggested_value": current.get(key)}): (
+            CURVE_SELECTOR
+        )
+        for key in CONF_CURRENT_CURVE.values()
+    }
+
+
+def _curve_options(user_input: dict[str, Any]) -> dict[str, float]:
+    """Return the current-curve values that were filled in."""
+    return {
+        key: round(float(user_input[key]), 1)
+        for key in CONF_CURRENT_CURVE.values()
+        if user_input.get(key) not in (None, "")
+    }
+
+
+def with_change_date(
+    old: dict[str, Any], new: dict[str, Any], today: str
+) -> dict[str, Any]:
+    """Store today as the change date when the current curve was changed.
+
+    Only when the curve was already filled in before (entering it the first
+    time is not a change) and the user did not pick a different date in the
+    same go.
+    """
+    old_curve = {k: old[k] for k in CONF_CURRENT_CURVE.values() if k in old}
+    new_curve = {k: new[k] for k in CONF_CURRENT_CURVE.values() if k in new}
+    date_untouched = new.get(CONF_CURVE_CHANGED_ON) == old.get(CONF_CURVE_CHANGED_ON)
+    if old_curve and new_curve and old_curve != new_curve and date_untouched:
+        return {**new, CONF_CURVE_CHANGED_ON: today}
+    return new
 
 
 def _calculation_schema(current: dict[str, Any]) -> dict:
@@ -284,11 +329,17 @@ class OptionsFlowHandler(OptionsFlowWithReload):
     ) -> ConfigFlowResult:
         """Edit the temperature sources and calculation settings."""
         if user_input is not None:
+            options = {
+                **_sources_options(self.hass, user_input),
+                **_calculation_options(user_input),
+                **_curve_options(user_input),
+            }
             return self.async_create_entry(
-                data={
-                    **_sources_options(self.hass, user_input),
-                    **_calculation_options(user_input),
-                }
+                data=with_change_date(
+                    dict(self.config_entry.options),
+                    options,
+                    dt_util.now().date().isoformat(),
+                )
             )
 
         current = dict(self.config_entry.options)
@@ -296,5 +347,11 @@ class OptionsFlowHandler(OptionsFlowWithReload):
         sources = _sources_schema(self.hass, pump, current)
         return self.async_show_form(
             step_id="init",
-            data_schema=vol.Schema({**sources.schema, **_calculation_schema(current)}),
+            data_schema=vol.Schema(
+                {
+                    **sources.schema,
+                    **_calculation_schema(current),
+                    **_curve_schema(current),
+                }
+            ),
         )

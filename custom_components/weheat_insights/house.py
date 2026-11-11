@@ -6,9 +6,8 @@ fit and hourly statistics for cool-down episodes.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
-from statistics import median
 from typing import TYPE_CHECKING
 
 from homeassistant.const import UnitOfEnergy, UnitOfTemperature
@@ -22,7 +21,6 @@ from .calculations.degree_days import degree_days_by_day
 from .calculations.heat_loss import DayPoint, HeatLossResult, heat_loss
 from .calculations.heating_curve import (
     EMITTER_EXPONENTS,
-    WEHEAT_CURVE_POINTS,
     CurvePoint,
     EmitterModel,
     SteadyHour,
@@ -67,23 +65,21 @@ class CurveAdvice:
     """Heating-curve advice and what it is based on."""
 
     points: list[CurvePoint]  # empty when there is not enough data
-    current: dict[float, float | None]  # curve point -> current setpoint
     emitters: EmitterModel | None
     target_c: float
     measured_indoor_c: float | None
     reason: str | None  # why there is no advice
     emitter_type: str = "mixed"
+    # The user's current heating curve (outdoor °C -> water °C), if entered.
+    current: dict[float, float] = field(default_factory=dict)
 
 
 # Steady heating hours from the whole last year calibrate the heating system:
 # how much heat it gives at a water temperature does not depend on the heating
 # curve setting, and cold days make the advice at low outdoor temperatures
-# better. The current curve uses only recent days, since it shows the setting.
+# better.
 CURVE_WINDOW_DAYS = 365
-CURRENT_CURVE_DAYS = 14
-CURRENT_CURVE_TOLERANCE_K = 1.0
-MIN_CURRENT_HOURS = 3
-CURRENT_CURVE_MIN_HEATING_KWH = 0.2
+MEASURED_INDOOR_DAYS = 14
 
 
 def steady_hours(
@@ -114,38 +110,6 @@ def steady_hours(
                 SteadyHour(heating_kwh[start], supply[start], return_[start], room_c),
             )
         )
-    return result
-
-
-def current_curve(
-    outdoor: dict[datetime, float],
-    setpoint: dict[datetime, float],
-    heating_kwh: dict[datetime, float],
-    dhw_kwh: dict[datetime, float],
-    points: tuple[float, ...] = WEHEAT_CURVE_POINTS,
-) -> dict[float, float | None]:
-    """Median water setpoint near each curve point, None where not observed.
-
-    Only hours of space heating count: when the pump does not heat, the
-    Weheat reports a low placeholder setpoint (10 °C), and during hot water
-    the setpoint is the DHW target.
-    """
-    heating_hours = {
-        t
-        for t, kwh in heating_kwh.items()
-        if kwh >= CURRENT_CURVE_MIN_HEATING_KWH
-        and dhw_kwh.get(t, 0.0) <= MAX_DHW_KWH_PER_HOUR
-    }
-    result: dict[float, float | None] = {}
-    for point in points:
-        values = [
-            setpoint[t]
-            for t, out in outdoor.items()
-            if t in setpoint
-            and t in heating_hours
-            and abs(out - point) <= CURRENT_CURVE_TOLERANCE_K
-        ]
-        result[point] = median(values) if len(values) >= MIN_CURRENT_HOURS else None
     return result
 
 
@@ -349,10 +313,8 @@ class HouseCoordinator(DataUpdateCoordinator[HouseData]):
             {
                 "indoor": data.indoor_entity_id or "",
                 "outdoor": data.outdoor_entity_id or "",
-                "pump_outdoor": data.entities.get(WeheatKey.OUTSIDE_TEMPERATURE, ""),
                 "supply": data.entities.get(WeheatKey.SUPPLY_TEMPERATURE, ""),
                 "return": data.entities.get(WeheatKey.RETURN_TEMPERATURE, ""),
-                "setpoint": data.entities.get(WeheatKey.WATER_SETPOINT, ""),
             },
             start,
             end,
@@ -421,7 +383,6 @@ class HouseCoordinator(DataUpdateCoordinator[HouseData]):
     ) -> CurveAdvice:
         """Calibrate the heating system and advise a heating curve."""
         since = local_midnight(today - timedelta(days=CURVE_WINDOW_DAYS))
-        recent = local_midnight(today - timedelta(days=CURRENT_CURVE_DAYS))
         room = settings.target_room_c if isinstance(indoor, float) else temps["indoor"]
         hours = [
             (t, h)
@@ -434,12 +395,6 @@ class HouseCoordinator(DataUpdateCoordinator[HouseData]):
             [h for _, h in hours],
             EMITTER_EXPONENTS.get(settings.emitter_type, EMITTER_EXPONENTS["mixed"]),
         )
-        current = current_curve(
-            {t: v for t, v in temps["pump_outdoor"].items() if t >= recent},
-            temps["setpoint"],
-            heat["heating"],
-            heat["dhw"],
-        )
         # Average indoor temperature over the last two weeks, to compare
         # with the target the advice aims for.
         last_days = (
@@ -448,7 +403,7 @@ class HouseCoordinator(DataUpdateCoordinator[HouseData]):
             else [
                 v
                 for d, v in indoor.items()
-                if d >= today - timedelta(days=CURRENT_CURVE_DAYS)
+                if d >= today - timedelta(days=MEASURED_INDOOR_DAYS)
             ]
         )
         measured = sum(last_days) / len(last_days) if last_days else None
@@ -461,12 +416,12 @@ class HouseCoordinator(DataUpdateCoordinator[HouseData]):
         if reason is not None or fit is None or emitters is None:
             return CurveAdvice(
                 [],
-                current,
                 emitters,
                 settings.target_room_c,
                 measured,
                 reason,
                 settings.emitter_type,
+                settings.current_curve,
             )
         # The demand model is fitted on daily data, so "measured range" means
         # the outdoor temperatures of the days the heat-loss fit used.
@@ -488,25 +443,24 @@ class HouseCoordinator(DataUpdateCoordinator[HouseData]):
         )
         return CurveAdvice(
             points,
-            current,
             emitters,
             settings.target_room_c,
             measured,
             None,
             settings.emitter_type,
+            settings.current_curve,
         )
 
 
 def curve_payload(data: HouseData) -> dict:
-    """Return the current and advised curve for the heating-curve chart."""
+    """Return the current (as entered) and advised curve for the chart."""
     curve = data.curve
     if curve is None:
         return {"current": [], "advice": [], "reason": "no_data"}
     return {
         "current": [
-            {"outdoor_c": point, "supply_c": round(value, 1)}
-            for point, value in curve.current.items()
-            if value is not None
+            {"outdoor_c": point, "supply_c": value}
+            for point, value in sorted(curve.current.items())
         ],
         "advice": [
             {

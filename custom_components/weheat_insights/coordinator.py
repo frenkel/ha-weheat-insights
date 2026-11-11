@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date, timedelta
 from functools import reduce
 import operator
@@ -22,6 +22,7 @@ from .calculations.periods import (
     sum_days,
 )
 from .const import (
+    CONF_CURRENT_CURVE,
     CONF_CURVE_CHANGED_ON,
     CONF_DEGREE_DAY_BASE,
     CONF_EMITTER_TYPE,
@@ -60,6 +61,8 @@ class Settings:
     target_room_c: float = DEFAULT_TARGET_ROOM_TEMPERATURE
     emitter_type: str = DEFAULT_EMITTER_TYPE
     curve_changed_on: date | None = None
+    # Current heating curve as entered by the user: outdoor °C -> water °C.
+    current_curve: dict[float, float] = field(default_factory=dict)
 
     @classmethod
     def from_options(cls, options) -> Settings:
@@ -83,6 +86,11 @@ class Settings:
                 )
             ),
             emitter_type=str(options.get(CONF_EMITTER_TYPE, DEFAULT_EMITTER_TYPE)),
+            current_curve={
+                point: float(options[key])
+                for point, key in CONF_CURRENT_CURVE.items()
+                if options.get(key) is not None
+            },
             curve_changed_on=(
                 date.fromisoformat(options[CONF_CURVE_CHANGED_ON])
                 if options.get(CONF_CURVE_CHANGED_ON)

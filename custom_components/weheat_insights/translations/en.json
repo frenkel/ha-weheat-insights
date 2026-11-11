@@ -39,7 +39,12 @@
           "weighted_degree_days": "Weighted degree days",
           "target_room_temperature": "Target room temperature",
           "emitter_type": "Heating system",
-          "curve_changed_on": "Heating curve changed on"
+          "curve_changed_on": "Heating curve changed on",
+          "current_curve_minus_20": "Current curve at −20 °C",
+          "current_curve_9": "Current curve at 9 °C",
+          "current_curve_15": "Current curve at 15 °C",
+          "current_curve_20": "Current curve at 20 °C",
+          "current_curve_25": "Current curve at 25 °C"
         },
         "data_description": {
           "outdoor_entity": "Used for degree days and heat-loss analysis.",
@@ -50,7 +55,12 @@
           "weighted_degree_days": "Count November–February ×1.1, March and October ×1.0 and April–September ×0.8 (Dutch convention).",
           "target_room_temperature": "The room temperature the heating-curve advice aims for.",
           "emitter_type": "How heat is delivered; affects how much a lower water temperature reduces heat output.",
-          "curve_changed_on": "Optional. Compares heating electricity per degree day before and after this date."
+          "curve_changed_on": "Optional. Compares heating electricity per degree day before and after this date. Set automatically when you change your current curve below.",
+          "current_curve_minus_20": "Water temperature of your current Weheat heating curve at this outdoor temperature (from the app or portal). Optional; changing it later stores the change date automatically.",
+          "current_curve_9": "Water temperature of your current Weheat heating curve at this outdoor temperature (from the app or portal). Optional; changing it later stores the change date automatically.",
+          "current_curve_15": "Water temperature of your current Weheat heating curve at this outdoor temperature (from the app or portal). Optional; changing it later stores the change date automatically.",
+          "current_curve_20": "Water temperature of your current Weheat heating curve at this outdoor temperature (from the app or portal). Optional; changing it later stores the change date automatically.",
+          "current_curve_25": "Water temperature of your current Weheat heating curve at this outdoor temperature (from the app or portal). Optional; changing it later stores the change date automatically."
         }
       }
     }

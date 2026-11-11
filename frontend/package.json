@@ -1,7 +1,7 @@
 {
   "name": "weheat-insights-frontend",
   "private": true,
-  "version": "0.6.11",
+  "version": "0.7.0",
   "description": "Dashboard strategy for the Weheat Insights Home Assistant integration (unofficial)",
   "license": "MIT",
   "type": "module",
