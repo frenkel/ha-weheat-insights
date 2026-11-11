@@ -21,9 +21,9 @@ Assistant: no external server, no accounts, no telemetry.
     mass; degree days and heating per degree day compared with last season.
   - **Heating curve**: advice for the five points of the Weheat heating
     curve (−20, 9, 15, 20 and 25 °C outdoor) that just keeps your target room
-    temperature, next to your current curve if you enter it under Configure; supply temperature against
-    outdoor temperature with both curves; before/after comparison of a curve
-    change, corrected for weather.
+    temperature, next to your current curve if you enter it under Configure;
+    supply temperature against outdoor temperature (up to 25 °C) with both
+    curves; before/after comparison of a curve change, corrected for weather.
   - **Operation**: how the last 30 days were spent per state (heating, hot
     water, defrost, legionella prevention, standby), and per state the number
     of periods today / 7 / 30 days and their average length, with periods and
@@ -43,17 +43,29 @@ Assistant: no external server, no accounts, no telemetry.
     degree day before and after a curve change.
   - Per operating state: periods today (with statistics for 7 and 30 days)
     and running totals of periods and hours.
-- Three custom cards you can also use on your own dashboards (see below).
+- Four custom cards you can also use on your own dashboards (see below).
 - Works from day one with your existing history: everything is computed from
   Home Assistant's long-term statistics of the core Weheat energy counters.
 - Works with multiple heat pumps. English and Dutch.
 
 ## Screenshots
 
-_Coming soon._
+**Performance**: SCOP this season, COP this month and today, and COP over
+time per month for heating, hot water, the heat pump and in total.
 
-<!-- ![Live overview](docs/images/live.png) -->
-<!-- ![History](docs/images/history.png) -->
+![Performance tab: COP tiles and COP over time](docs/images/performance.png)
+
+**Heating curve**: advice for each point of the Weheat curve with its range,
+next to the curve you entered.
+
+![Heating curve tab: advice table](docs/images/heating-curve.png)
+
+**Operation**: how the last 30 days were spent and how often and how long
+each state ran, with hours per state per day.
+
+![Operation tab: time per state and periods](docs/images/operation.png)
+
+![Operation tab: hours per day](docs/images/hours-per-day.png)
 
 ## Requirements
 
@@ -112,7 +124,7 @@ real and are kept on purpose.
 
 ### Cards for your own dashboards
 
-The dashboard uses three cards that you can also add to any other dashboard.
+The dashboard uses four cards that you can also add to any other dashboard.
 You find the `entry_id` by opening **Settings → Devices & services → Weheat
 Insights**: the address bar then ends in `#config_entry=<entry_id>`.
 
@@ -224,8 +236,9 @@ The range comes from the 95 % interval of the heat-loss coefficient. Points
 far outside the outdoor temperatures you have measured are marked as
 extrapolated.
 
-The heating-curve chart shows the last 12 months (the same hours the advice
-is calibrated on) and only uses hours in which the pump mainly heated the
+The heating-curve chart shows the last 12 months, up to 25 °C outdoor (the
+warmest point of the Weheat curve), the same hours the advice is
+calibrated on, and only uses hours in which the pump mainly heated the
 house (at least 0.5 kWh space heating, no hot water), and skips the hour after
 hot water, when left-over DHW heat can be pushed into the heating circuit at a
 high supply temperature.
@@ -248,7 +261,9 @@ periodic heating of the hot-water tank to a high temperature). Rare states
 such as a water check, self test or firmware update are not counted. Per state there is a summary
 sensor (periods today; attributes with count, min/avg/max length, hours and
 share for today, 7 and 30 days) and two running totals with long-term
-statistics (number of periods and hours) for bar charts.
+statistics (number of periods and hours) for bar charts. The hours count a
+running period as it goes, so a long standby period is spread over the hours
+and days it lasted; a period counts as one in the hour it ends.
 
 The core integration reports the state every two minutes, so lengths are
 accurate to about two minutes and a very short defrost can be missed. Time
@@ -257,11 +272,13 @@ before.
 
 ### Long-term statistics
 
-COP/SCOP and other ratio or estimate sensors (heat loss, advice) have no
-`state_class` on purpose: Home Assistant would store hourly averages of a
-running ratio or a model estimate, which mean little. Use the performance
-card for COP over time. The operating-state counters and the degree-day
-statistic do have long-term statistics, so their bar charts keep history.
+COP over time is calculated from the energy counters (the performance card),
+never from averages of the COP sensors: an hourly average of a running ratio
+means little. The COP/SCOP sensors do have `state_class: measurement`,
+because without a unit or state class Home Assistant shows a state as text,
+without your decimal separator. Estimate sensors (heat loss, advice) have no
+`state_class`. The operating-state counters and the degree-day statistic
+have long-term statistics, so their bar charts keep history.
 
 ## Settings
 
