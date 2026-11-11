@@ -4,7 +4,7 @@
   "after_dependencies": ["weheat"],
   "codeowners": ["@frenkel"],
   "config_flow": true,
-  "dependencies": [],
+  "dependencies": ["frontend", "http", "websocket_api"],
   "documentation": "https://github.com/frenkel/ha-weheat-insights",
   "integration_type": "service",
   "iot_class": "calculated",

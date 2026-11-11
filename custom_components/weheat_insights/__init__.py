@@ -11,7 +11,8 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import CALLBACK_TYPE, Event, HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryNotReady
-from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers import config_validation as cv, entity_registry as er
+from homeassistant.helpers.typing import ConfigType
 
 from .config_flow import resolve_entity_id
 from .const import (
@@ -27,8 +28,12 @@ from .discovery import (
     async_get_heat_pump,
     async_map_heat_pump_entities,
 )
+from .frontend import async_register_frontend
+from .websocket_api import async_register as async_register_websocket
 
 PLATFORMS: list[Platform] = [Platform.SENSOR]
+
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 
 @dataclass(slots=True)
@@ -42,6 +47,13 @@ class WeheatInsightsData:
 
 
 type WeheatInsightsConfigEntry = ConfigEntry[WeheatInsightsData]
+
+
+async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
+    """Register the dashboard strategy and its WebSocket API."""
+    await async_register_frontend(hass)
+    async_register_websocket(hass)
+    return True
 
 
 async def async_setup_entry(
