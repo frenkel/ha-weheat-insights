@@ -13,7 +13,7 @@ Assistant: no external server, no accounts, no telemetry.
 
 **Features**
 
-- A dashboard that builds itself, with no YAML. For each heat pump four tabs:
+- A dashboard that builds itself, with no YAML. For each heat pump five tabs:
   - **Performance** (default): COP and SCOP per day, month and heating
     season, for the heat pump (as in the Weheat app) and in total (incl.
     standby and pumps), split into space heating and hot water; COP over
@@ -26,6 +26,10 @@ Assistant: no external server, no accounts, no telemetry.
     temperature, next to your current curve; supply temperature against
     outdoor temperature with both curves; before/after comparison of a curve
     change, corrected for weather.
+  - **Operation**: how often and how long the heat pump heats, makes hot
+    water, defrosts and stands by (today, 7 and 30 days: number of periods,
+    min/avg/max length, hours and share, short heating periods), with
+    periods and hours per day as bar charts and defrosts next to degree days.
   - **Live**: operating state, COP gauge (while running), room, outdoor,
     supply and return temperatures, ΔT, electrical power and heat output,
     history for the last 24 hours and hourly statistics for the last 7 days.
@@ -180,6 +184,22 @@ Treat the advice as a starting point, not a guarantee: change the curve in
 small steps and check the rooms stay warm. Set the date of the change under
 **Configure** to compare heating electricity per degree day (and heating
 COP) for up to 60 days before and after.
+
+### Operating states
+
+Weheat Insights follows the core integration's operating state and stores
+each completed period (kept for about 13 months). On first start it fills
+in from the recorder's state history (10 days by default). States are
+grouped into heating, hot water, defrost, standby and other (water check,
+legionella prevention and other rare states). Per state there is a summary
+sensor (periods today; attributes with count, min/avg/max length, hours and
+share for today, 7 and 30 days) and two running totals with long-term
+statistics (number of periods and hours) for bar charts.
+
+The core integration reports the state every two minutes, so lengths are
+accurate to about two minutes and a very short defrost can be missed. Time
+while Home Assistant was not running is counted in the state it was in
+before.
 
 COP/SCOP sensors have no `state_class` on purpose: Home Assistant would store
 hourly averages of a running ratio, which mean nothing. Use the performance
