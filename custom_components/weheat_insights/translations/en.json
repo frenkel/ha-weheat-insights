@@ -45,5 +45,12 @@
     "heat_pump_not_found": {
       "message": "Weheat heat pump {uuid} was not found. Is the Weheat integration loaded?"
     }
+  },
+  "entity": {
+    "sensor": {
+      "delta_t": {
+        "name": "ΔT supply/return"
+      }
+    }
   }
 }

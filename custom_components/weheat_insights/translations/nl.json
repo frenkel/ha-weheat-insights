@@ -45,5 +45,12 @@
     "heat_pump_not_found": {
       "message": "Weheat-warmtepomp {uuid} niet gevonden. Is de Weheat-integratie geladen?"
     }
+  },
+  "entity": {
+    "sensor": {
+      "delta_t": {
+        "name": "ΔT aanvoer/retour"
+      }
+    }
   }
 }

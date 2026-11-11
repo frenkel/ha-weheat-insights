@@ -28,7 +28,7 @@ from .discovery import (
     async_map_heat_pump_entities,
 )
 
-PLATFORMS: list[Platform] = []
+PLATFORMS: list[Platform] = [Platform.SENSOR]
 
 
 @dataclass(slots=True)
