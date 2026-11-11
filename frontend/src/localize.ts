@@ -116,7 +116,7 @@ const en = {
   cool_down_rate: "Cool-down at 15 K",
   thermal_mass: "Thermal mass",
   house_definitions:
-    "**Heat loss.** Each dot is one day: heating heat against the average indoor−outdoor difference. The slope of the line is the heat-loss coefficient (W/K, shown with a 95 % confidence interval); where the line crosses zero tells how much free heat (sun, people, appliances) the house gets. Grey dots are days left out: missing data, too mild, a big indoor temperature change, or another heat source running. **Cool-down** uses periods of 4+ hours without heating and needs an indoor sensor. **Supply temperature vs outdoor** shows hours of space heating only; the colour is ΔT supply−return.",
+    "**Heat loss.** Each dot is one day: heating heat against the average indoor−outdoor difference. The slope of the line is the heat-loss coefficient (W/K, shown with a 95 % confidence interval); where the line reaches zero tells how much free heat (sun, people, appliances) the house gets, and gives the balance point. Grey dots are days left out: missing data, too mild, a big indoor temperature change, or another heat source running. **Cool-down** uses periods of 4+ hours without heating and needs an indoor sensor. **Degree days** measure how cold it was: per day the base temperature (18 °C, a setting) minus the average outdoor temperature, weighted by season by default. **Heating per degree day** divides space-heating heat by degree days, so a mild and a cold winter can be compared.",
   delta_t_short: "ΔT",
   power_input_short: "Electricity",
   power_output_short: "Heat",
@@ -133,7 +133,7 @@ const en = {
   standby: "Standby",
   degree_days: "Degree days",
   definitions:
-    "**How these numbers are calculated.** *Heat pump* COP/SCOP is all useful heat divided by the compressor electricity for heating, hot water and defrost; this matches the Weheat app. *Total* also counts standby and the indoor unit (circulation pumps): what your heat actually costs. *Heating* and *hot water* only count the compressor electricity for that mode plus its share of defrost (split by electricity use); standby and the indoor unit are left out. Defrost heat taken back from the water counts against the COP. *Heating per degree day* uses heating heat only and lets you compare winters of different coldness. Figures come from Home Assistant's long-term statistics and can lag up to about an hour.",
+    "**How these numbers are calculated.** *Heat pump* COP/SCOP is all useful heat divided by the compressor electricity for heating, hot water and defrost; this matches the Weheat app. *Total* also counts standby and the indoor unit (circulation pumps): what your heat actually costs. *Heating* and *hot water* only count the compressor electricity for that mode plus its share of defrost (split by electricity use); standby and the indoor unit are left out. Heat taken back from the water during defrost counts against the COP. *COP over time* shows the same figures per day, month or heating season. A COP is only shown once at least 0.5 kWh of electricity was used. Figures come from Home Assistant's long-term statistics and can lag up to about an hour.",
 };
 
 type Key = keyof typeof en;
@@ -254,7 +254,7 @@ const nl: Record<Key, string> = {
   cool_down_rate: "Afkoeling bij 15 K",
   thermal_mass: "Warmtecapaciteit",
   house_definitions:
-    "**Warmteverlies.** Elke stip is één dag: verwarmingswarmte tegen het gemiddelde verschil tussen binnen en buiten. De helling van de lijn is de warmteverliescoëfficiënt (W/K, met een betrouwbaarheidsinterval van 95 %); waar de lijn nul raakt zie je hoeveel gratis warmte (zon, mensen, apparaten) het huis krijgt. Grijze stippen zijn dagen die niet meetellen: ontbrekende gegevens, te zacht, een grote verandering binnen of een andere warmtebron. **Afkoeling** gebruikt periodes van minstens 4 uur zonder verwarming en heeft een binnensensor nodig. **Aanvoertemperatuur vs buiten** toont alleen uren met ruimteverwarming; de kleur is de ΔT aanvoer−retour.",
+    "**Warmteverlies.** Elke stip is één dag: verwarmingswarmte tegen het gemiddelde verschil tussen binnen en buiten. De helling van de lijn is de warmteverliescoëfficiënt (W/K, met een betrouwbaarheidsinterval van 95 %); waar de lijn nul raakt zie je hoeveel gratis warmte (zon, mensen, apparaten) het huis krijgt, en daarmee de stookgrens. Grijze stippen zijn dagen die niet meetellen: ontbrekende gegevens, te zacht, een grote verandering binnen of een andere warmtebron. **Afkoeling** gebruikt periodes van minstens 4 uur zonder verwarming en heeft een binnensensor nodig. **Graaddagen** geven aan hoe koud het was: per dag de basistemperatuur (18 °C, instelbaar) min de gemiddelde buitentemperatuur, standaard gewogen naar seizoen. **Verwarming per graaddag** deelt de verwarmingswarmte door de graaddagen, zodat je een zachte en een koude winter kunt vergelijken.",
   delta_t_short: "ΔT",
   power_input_short: "Stroom",
   power_output_short: "Warmte",
@@ -271,7 +271,7 @@ const nl: Record<Key, string> = {
   standby: "Stand-by",
   degree_days: "Graaddagen",
   definitions:
-    "**Zo worden deze getallen berekend.** De COP/SCOP *warmtepomp* is alle nuttige warmte gedeeld door de compressorstroom voor verwarming, warm water en ontdooien; dat komt overeen met de Weheat-app. *Totaal* telt ook stand-by en de binnenunit (circulatiepompen) mee: wat je warmte echt kost. *Verwarming* en *warm water* tellen alleen de compressorstroom voor die functie plus hun deel van het ontdooien (verdeeld naar stroomverbruik); stand-by en de binnenunit tellen daar niet mee. Warmte die bij ontdooien uit het water wordt gehaald, telt negatief mee. *Verwarming per graaddag* gebruikt alleen verwarmingswarmte, zodat je winters van verschillende koude kunt vergelijken. De cijfers komen uit de langetermijnstatistieken van Home Assistant en kunnen tot ongeveer een uur achterlopen.",
+    "**Zo worden deze getallen berekend.** De COP/SCOP *warmtepomp* is alle nuttige warmte gedeeld door de compressorstroom voor verwarming, warm water en ontdooien; dat komt overeen met de Weheat-app. *Totaal* telt ook stand-by en de binnenunit (circulatiepompen) mee: wat je warmte echt kost. *Verwarming* en *warm water* tellen alleen de compressorstroom voor die functie plus hun deel van het ontdooien (verdeeld naar stroomverbruik); stand-by en de binnenunit tellen daar niet mee. Warmte die bij ontdooien uit het water wordt gehaald, telt negatief mee. *COP door de tijd* toont dezelfde cijfers per dag, maand of stookseizoen. Een COP verschijnt pas als er minstens 0,5 kWh stroom is gebruikt. De cijfers komen uit de langetermijnstatistieken van Home Assistant en kunnen tot ongeveer een uur achterlopen.",
 };
 
 const translations: Record<string, Record<Key, string>> = { en, nl };

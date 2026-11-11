@@ -11,8 +11,6 @@ Assistant: no external server, no accounts, no telemetry.
 
 ## Features
 
-**Features**
-
 - A dashboard that builds itself, with no YAML. For each heat pump five tabs:
   - **Performance** (default): COP and SCOP per day, month and heating
     season, for the heat pump (as in the Weheat app) and in total (incl.
@@ -32,10 +30,20 @@ Assistant: no external server, no accounts, no telemetry.
     periods and hours per day as bar charts and defrosts next to degree days.
   - **Live**: operating state, COP gauge (while running), room, outdoor,
     supply and return temperatures, ΔT, electrical power and heat output,
-    history for the last 24 hours and hourly statistics for the last 7 days.
-- Sensors: ΔT supply/return; COP today, COP this month and SCOP this season
-  (heat pump, total, heating, hot water); COP lost to defrost; degree days; heating per
-  degree day (this season, same period last season, whole last season).
+    graphs for the last 24 hours and hourly statistics for the last 7 days.
+- Sensors, all on a separate "Weheat Insights" device per heat pump:
+  - ΔT supply/return.
+  - COP today, COP this month and SCOP this season: heat pump, total,
+    heating and hot water; COP lost to defrost and heat taken by defrost.
+  - Degree days this month and season; heating per degree day this season,
+    the same period last season and the whole of last season.
+  - Heat-loss coefficient, heat loss at −10 °C, balance point, cool-down time
+    constant, cool-down rate and thermal mass.
+  - Heating-curve advice for each Weheat curve point; heating electricity per
+    degree day before and after a curve change.
+  - Per operating state: periods today (with statistics for 7 and 30 days)
+    and running totals of periods and hours.
+- Two custom cards you can also use on your own dashboards (see below).
 - Works from day one with your existing history: everything is computed from
   Home Assistant's long-term statistics of the core Weheat energy counters.
 - Works with multiple heat pumps. English and Dutch.
@@ -72,8 +80,8 @@ folder and restart Home Assistant.
 3. Choose the outdoor temperature sensor (default: the heat pump's own
    air-inlet sensor) and, optionally, an indoor temperature sensor.
 
-Repeat for each heat pump. You can change the sensors later under
-**Configure**.
+Repeat for each heat pump. Everything can be changed later; see
+[Settings](#settings).
 
 ### Dashboard
 
@@ -95,11 +103,37 @@ The dashboard updates itself when you add heat pumps or when sensors change.
 > in the companion app, use *Settings → Companion app → Debugging → Reset
 > frontend cache*.
 
-Negative values in the power and COP graphs are defrost cycles: the heat pump
-briefly takes heat back from the heating water to thaw the outdoor unit. They
-are real and are kept on purpose.
 The integration serves the dashboard code itself, so you don't need a
 separate frontend install.
+
+Negative values in the power graph are defrost cycles: the heat pump briefly
+takes heat back from the heating water to thaw the outdoor unit. They are
+real and are kept on purpose.
+
+### Cards for your own dashboards
+
+The dashboard uses two cards that you can also add to any other dashboard.
+You find the `entry_id` by opening **Settings → Devices & services → Weheat
+Insights**: the address bar then ends in `#config_entry=<entry_id>`.
+
+```yaml
+# COP per day, month or season (heat pump and total, heating and hot water)
+type: custom:weheat-insights-performance-card
+entry_id: <entry_id>
+period: month          # day, month or season
+
+# Heat loss of the house (one dot per day, with the fitted line)
+type: custom:weheat-insights-scatter-card
+entry_id: <entry_id>
+mode: heat_loss
+
+# Supply temperature against outdoor temperature, coloured by ΔT,
+# with the current and the advised heating curve
+type: custom:weheat-insights-scatter-card
+entry_id: <entry_id>
+mode: supply_curve
+days: 60
+```
 
 ## How the numbers are calculated
 
@@ -148,10 +182,6 @@ separate frontend install.
   τ gives the cool-down rate at 15 K difference and, with H, the thermal
   mass C = τ × H. A modulating heat pump that runs all night leaves few such
   periods, so this can take a while to appear.
-- The heating-curve chart only uses hours in which the pump mainly heated
-  the house (at least 0.5 kWh space heating, no hot water), and skips the
-  hour after hot water, when left-over DHW heat can be pushed into the
-  heating circuit at a high supply temperature.
 
 ### Heating-curve advice
 
@@ -180,6 +210,11 @@ extrapolated. The current curve is read from the Weheat water setpoint
 against the heat pump's own outdoor sensor over the last 14 days, so points
 it has not seen show "–".
 
+The heating-curve chart only uses hours in which the pump mainly heated the
+house (at least 0.5 kWh space heating, no hot water), and skips the hour after
+hot water, when left-over DHW heat can be pushed into the heating circuit at a
+high supply temperature.
+
 Treat the advice as a starting point, not a guarantee: change the curve in
 small steps and check the rooms stay warm. Set the date of the change under
 **Configure** to compare heating electricity per degree day (and heating
@@ -201,14 +236,25 @@ accurate to about two minutes and a very short defrost can be missed. Time
 while Home Assistant was not running is counted in the state it was in
 before.
 
-COP/SCOP sensors have no `state_class` on purpose: Home Assistant would store
-hourly averages of a running ratio, which mean nothing. Use the performance
-card for COP over time.
+### Long-term statistics
 
-You can change the outdoor and indoor sensor, the heating season, the
-degree-day settings, the target room temperature, the heating system and the
-date of a heating-curve change under **Settings → Devices & services → Weheat Insights →
-Configure**.
+COP/SCOP and other ratio or estimate sensors (heat loss, advice) have no
+`state_class` on purpose: Home Assistant would store hourly averages of a
+running ratio or a model estimate, which mean little. Use the performance
+card for COP over time. The operating-state counters and the degree-day
+statistic do have long-term statistics, so their bar charts keep history.
+
+## Settings
+
+Under **Settings → Devices & services → Weheat Insights → Configure** you can
+change:
+
+- the outdoor and (optional) indoor temperature sensor;
+- the heating season (start month and end month);
+- the degree-day base temperature and whether degree days are weighted;
+- the target room temperature for the heating-curve advice;
+- the heating system: radiators, underfloor heating or both;
+- the date of a heating-curve change, for the before/after comparison.
 
 ## How it works
 
@@ -216,7 +262,8 @@ Weheat Insights reads the sensors that the core Weheat integration creates.
 It finds them through Home Assistant's device and entity registries, so
 renaming entities is fine. Performance figures come from the recorder's
 long-term statistics; degree days are also published as a long-term statistic
-(`weheat_insights:degree_days_…`) for the statistics graph card. It does not
+(`weheat_insights:degree_days_…`) for the statistics graph card. Operating
+periods are stored in Home Assistant's own storage (`.storage/`). It does not
 talk to the Weheat cloud and cannot control your heat pump.
 
 ## Development

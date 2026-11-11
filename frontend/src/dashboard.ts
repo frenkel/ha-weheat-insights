@@ -158,7 +158,6 @@ export function pumpView(pump: HeatPumpConfig, t: Localize, index: number): Love
     historyGraph(t("temperatures"), temperatures, 24),
     historyGraph(t("power"), power, 24),
     historyGraph(t("delta_t"), deltaT, 24),
-    historyGraph(t("state"), present([entity(w.heat_pump_state, t("state"))]), 24),
   ]);
 
   // Seven days of raw history is heavy; hourly long-term statistics are not.
