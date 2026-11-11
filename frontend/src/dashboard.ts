@@ -72,6 +72,7 @@ function changeBars(
   entities: Entity[],
   period: "day" | "month",
   days: number,
+  columns: number | "full" = "full",
 ): LovelaceCardConfig | null {
   return entities.length
     ? {
@@ -82,7 +83,7 @@ function changeBars(
         days_to_show: days,
         stat_types: ["change"],
         chart_type: "bar",
-        grid_options: { columns: "full" },
+        grid_options: { columns },
       }
     : null;
 }
@@ -259,14 +260,6 @@ export function houseView(pump: HeatPumpConfig, t: Localize, index: number): Lov
     2,
     true,
   );
-  // Start of the heating-curve analysis; gets its own tab in phase 4.
-  const heatingCurve = section(
-    [
-      heading(t("heating_curve"), "mdi:chart-bell-curve-cumulative"),
-      { type: `custom:${SCATTER_CARD_TAG}`, entry_id: pump.entry_id, mode: "supply_curve", days: 60 },
-    ],
-    2,
-  );
   const explanation = section([
     heading(t("title"), "mdi:information-outline"),
     { type: "markdown", content: `${t("house_definitions")}\n\n_${t("disclaimer")}_` },
@@ -283,9 +276,16 @@ export function houseView(pump: HeatPumpConfig, t: Localize, index: number): Lov
     heading(t("degree_days"), "mdi:thermometer-lines"),
     tile(i.degree_days_month, t("this_month")),
     tile(i.degree_days_season, t("this_season")),
-    degreeDays ? changeBars(t("degree_days_per_month"), [degreeDays], "month", 400) : null,
-    degreeDays ? changeBars(t("degree_days_per_day"), [degreeDays], "day", 30) : null,
   ]);
+  // Side by side in a wide section, so both columns end at about the same height.
+  const degreeDayCharts = section(
+    [
+      degreeDays ? changeBars(t("degree_days_per_month"), [degreeDays], "month", 400, 6) : null,
+      degreeDays ? changeBars(t("degree_days_per_day"), [degreeDays], "day", 30, 6) : null,
+    ],
+    2,
+    true,
+  );
 
   return {
     title: `${pump.name} · ${t("house")}`,
@@ -293,7 +293,80 @@ export function houseView(pump: HeatPumpConfig, t: Localize, index: number): Lov
     icon: "mdi:home-thermometer-outline",
     type: "sections",
     max_columns: 4,
-    sections: present([house, houseCharts, weather, heatingCurve, explanation]),
+    sections: present([house, houseCharts, weather, degreeDayCharts, explanation]),
+  };
+}
+
+const CURVE_POINTS: [number, string][] = [
+  [-20, "curve_advice_minus_20"],
+  [9, "curve_advice_9"],
+  [15, "curve_advice_15"],
+  [20, "curve_advice_20"],
+  [25, "curve_advice_25"],
+];
+
+/** Text safe inside a single-quoted Jinja string. */
+const jinja = (text: string) => text.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+
+/** Markdown table with a Jinja template, so it updates without a custom card. */
+export function curveTable(pump: HeatPumpConfig, t: Localize): string | null {
+  const rows = CURVE_POINTS.filter(([, key]) => pump.insights[key]);
+  if (!rows.length) return null;
+  const first = pump.insights[rows[0][1]]!;
+  const deg = (expr: string) => `{{ (${expr}) ~ ' °C' if (${expr}) is not none else '–' }}`;
+  const lines = [
+    `{% set reason = state_attr('${first}', 'no_advice_reason') %}`,
+    `**${t("curve_target")}:** {{ state_attr('${first}', 'target_room_temperature') }} °C` +
+      ` · ${t("curve_measured")}: {{ state_attr('${first}', 'measured_indoor_temperature') or '–' }} °C`,
+    "",
+    `{% if reason %}${t("curve_no_advice")} {{ {'no_heat_loss': '${jinja(t("reason_no_heat_loss"))}', 'too_few_steady_hours': '${jinja(t("reason_too_few_steady_hours"))}'}.get(reason, reason) }}{% endif %}`,
+    "",
+    `| ${t("curve_outdoor")} | ${t("curve_current")} | ${t("curve_app")} | ${t("curve_portal")} | ${t("curve_range")} |`,
+    "|---:|---:|---:|---:|:---|",
+    ...rows.map(([outdoor, key]) => {
+      const e = pump.insights[key]!;
+      const value = `states('${e}') | float(none)`;
+      return (
+        `| ${outdoor} °C | ${deg(`state_attr('${e}', 'current')`)} | ${deg(`state_attr('${e}', 'app')`)} | ` +
+        `{{ '**' ~ (${value}) ~ ' °C**' if (${value}) is not none else '–' }} | ` +
+        `{% if state_attr('${e}', 'no_heat_needed') %}${t("curve_no_heat")}{% elif state_attr('${e}', 'range_low') is not none %}` +
+        `{{ state_attr('${e}', 'range_low') }}–{{ state_attr('${e}', 'range_high') }} °C` +
+        `{% if state_attr('${e}', 'extrapolated') %} (${t("curve_extrapolated")}){% endif %}{% endif %} |`
+      );
+    }),
+  ];
+  return lines.join("\n");
+}
+
+export function curveView(pump: HeatPumpConfig, t: Localize, index: number): LovelaceViewConfig {
+  const i = pump.insights;
+  const table = curveTable(pump, t);
+  const advice = section([
+    heading(t("curve_advice"), "mdi:chart-bell-curve-cumulative"),
+    table ? { type: "markdown", content: table } : null,
+  ]);
+  const chart = section(
+    [{ type: `custom:${SCATTER_CARD_TAG}`, entry_id: pump.entry_id, mode: "supply_curve", days: 60 }],
+    2,
+    true,
+  );
+  const comparison = section([
+    heading(t("before_after"), "mdi:swap-vertical"),
+    tile(i.heating_electricity_per_degree_day_before, t("per_degree_day_before")),
+    tile(i.heating_electricity_per_degree_day_after, t("per_degree_day_after")),
+    tile(i.heating_curve_change_effect, t("change_effect")),
+  ]);
+  const explanation = section([
+    heading(t("title"), "mdi:information-outline"),
+    { type: "markdown", content: `${t("curve_definitions")}\n\n_${t("disclaimer")}_` },
+  ]);
+  return {
+    title: `${pump.name} · ${t("heating_curve")}`,
+    path: index === 0 ? "heating-curve" : `heating-curve-${index + 1}`,
+    icon: "mdi:chart-bell-curve-cumulative",
+    type: "sections",
+    max_columns: 4,
+    sections: present([advice, chart, comparison, explanation]),
   };
 }
 
@@ -316,6 +389,7 @@ export function generateDashboard(pumps: HeatPumpConfig[], t: Localize): Lovelac
     views: pumps.flatMap((pump, index) => [
       performanceView(pump, t, index),
       houseView(pump, t, index),
+      curveView(pump, t, index),
       pumpView(pump, t, index),
     ]),
   };
