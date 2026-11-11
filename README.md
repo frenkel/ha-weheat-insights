@@ -21,7 +21,7 @@ Assistant: no external server, no accounts, no telemetry.
     mass; degree days and heating per degree day compared with last season.
   - **Heating curve**: advice for the five points of the Weheat heating
     curve (−20, 9, 15, 20 and 25 °C outdoor) that just keeps your target room
-    temperature, next to your current curve; supply temperature against
+    temperature; supply temperature against
     outdoor temperature with both curves; before/after comparison of a curve
     change, corrected for weather.
   - **Operation**: how the last 30 days were spent per state (heating, hot
@@ -223,9 +223,9 @@ The advice is given with one decimal, which the Weheat web portal accepts;
 in the app, which only takes whole degrees, round up so the house stays warm.
 The range comes from the 95 % interval of the heat-loss coefficient. Points
 far outside the outdoor temperatures you have measured are marked as
-extrapolated. The current curve is read from the Weheat water setpoint
-against the heat pump's own outdoor sensor over the last 14 days, so points
-it has not seen show "–".
+extrapolated. The chart also shows your current curve where it is known: it
+is read from the Weheat water setpoint against the heat pump's own outdoor
+sensor over the last 14 days (a dot while only one curve point is known).
 
 The heating-curve chart shows the last 12 months (the same hours the advice
 is calibrated on) and only uses hours in which the pump mainly heated the

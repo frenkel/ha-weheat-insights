@@ -336,15 +336,14 @@ export function curveTable(pump: HeatPumpConfig, t: Localize): string | null {
     "",
     `{% if reason %}${t("curve_no_advice")} {{ {'no_heat_loss': '${jinja(t("reason_no_heat_loss"))}', 'too_few_steady_hours': '${jinja(t("reason_too_few_steady_hours"))}'}.get(reason, reason) }}{% endif %}`,
     "",
-    `| ${noWrap(`${t("curve_outdoor")} (°C)`)} | ${noWrap(`${t("curve_current")} (°C)`)} | ${noWrap(`${t("curve_advice")} (°C)`)} | ${noWrap(`${t("curve_range")} (°C)`)} |`,
-    "|---:|---:|---:|:---|",
+    `| ${noWrap(`${t("curve_outdoor")} (°C)`)} | ${noWrap(`${t("curve_advice")} (°C)`)} | ${noWrap(`${t("curve_range")} (°C)`)} |`,
+    "|---:|---:|:---|",
     ...rows.map(([outdoor, key]) => {
       const e = pump.insights[key]!;
       const value = `states('${e}') | float(none)`;
       return (
         // The asterisk marks advice that is based on extrapolation.
         `| ${outdoor} | ` +
-        `${num(`state_attr('${e}', 'current')`)} | ` +
         `{% if (${value}) is not none %}**${num(value)}**{% if ${flagged(e)} %}\\*{% endif %}{% else %}–{% endif %} | ` +
         `{% if state_attr('${e}', 'no_heat_needed') %}${t("curve_no_heat")}{% elif state_attr('${e}', 'range_low') is not none %}` +
         `${num(`state_attr('${e}', 'range_low')`)}–${num(`state_attr('${e}', 'range_high')`)}{% endif %} |`
