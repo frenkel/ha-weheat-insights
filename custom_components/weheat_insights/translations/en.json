@@ -50,6 +50,54 @@
     "sensor": {
       "delta_t": {
         "name": "ΔT supply/return"
+      },
+      "cop_today": {
+        "name": "COP today"
+      },
+      "cop_heating_today": {
+        "name": "COP heating today"
+      },
+      "cop_dhw_today": {
+        "name": "COP hot water today"
+      },
+      "cop_month": {
+        "name": "COP this month"
+      },
+      "cop_heating_month": {
+        "name": "COP heating this month"
+      },
+      "cop_dhw_month": {
+        "name": "COP hot water this month"
+      },
+      "scop_season": {
+        "name": "SCOP this season"
+      },
+      "scop_heating_season": {
+        "name": "SCOP heating this season"
+      },
+      "scop_dhw_season": {
+        "name": "SCOP hot water this season"
+      },
+      "defrost_cop_impact_season": {
+        "name": "COP lost to defrost this season"
+      },
+      "defrost_heat_season": {
+        "name": "Heat taken by defrost this season"
+      },
+      "degree_days_month": {
+        "name": "Degree days this month"
+      },
+      "degree_days_season": {
+        "name": "Degree days this season"
+      },
+      "heat_per_degree_day_season": {
+        "name": "Heating per degree day this season"
+      },
+      "heat_per_degree_day_last_year": {
+        "name": "Heating per degree day same period last season"
+      },
+      "heat_per_degree_day_last_season": {
+        "name": "Heating per degree day last season"
       }
     }
   }

@@ -50,6 +50,54 @@
     "sensor": {
       "delta_t": {
         "name": "ΔT aanvoer/retour"
+      },
+      "cop_today": {
+        "name": "COP vandaag"
+      },
+      "cop_heating_today": {
+        "name": "COP verwarming vandaag"
+      },
+      "cop_dhw_today": {
+        "name": "COP warm water vandaag"
+      },
+      "cop_month": {
+        "name": "COP deze maand"
+      },
+      "cop_heating_month": {
+        "name": "COP verwarming deze maand"
+      },
+      "cop_dhw_month": {
+        "name": "COP warm water deze maand"
+      },
+      "scop_season": {
+        "name": "SCOP dit stookseizoen"
+      },
+      "scop_heating_season": {
+        "name": "SCOP verwarming dit stookseizoen"
+      },
+      "scop_dhw_season": {
+        "name": "SCOP warm water dit stookseizoen"
+      },
+      "defrost_cop_impact_season": {
+        "name": "COP-verlies door ontdooien dit stookseizoen"
+      },
+      "defrost_heat_season": {
+        "name": "Warmte gebruikt voor ontdooien dit stookseizoen"
+      },
+      "degree_days_month": {
+        "name": "Graaddagen deze maand"
+      },
+      "degree_days_season": {
+        "name": "Graaddagen dit stookseizoen"
+      },
+      "heat_per_degree_day_season": {
+        "name": "Verwarming per graaddag dit stookseizoen"
+      },
+      "heat_per_degree_day_last_year": {
+        "name": "Verwarming per graaddag zelfde periode vorig stookseizoen"
+      },
+      "heat_per_degree_day_last_season": {
+        "name": "Verwarming per graaddag vorig stookseizoen"
       }
     }
   }
