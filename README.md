@@ -19,7 +19,12 @@ Assistant: no external server, no accounts, no telemetry.
   - **House**: heat-loss coefficient with confidence interval and scatter
     chart, heat loss at −10 °C, balance point, cool-down rate and thermal
     mass; degree days and heating per degree day compared with last season.
-  - **Heating curve**: advice for the five points of the Weheat heating
+  - **House**: heat-loss coefficient, balance point, cool-down and thermal mass,
+with one dot per day of heating against the indoor–outdoor difference.
+
+![House tab: heat loss](docs/images/house.png)
+
+**Heating curve**: advice for the five points of the Weheat heating
     curve (−20, 9, 15, 20 and 25 °C outdoor) that just keeps your target room
     temperature, next to your current curve if you enter it under Configure;
     supply temperature against outdoor temperature (up to 25 °C) with both
