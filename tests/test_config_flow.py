@@ -111,9 +111,20 @@ async def test_options_flow(
     outside = weheat.entity_ids["outside_temperature"]
     assert _schema_default(result, CONF_OUTDOOR_ENTITY) == outside
 
+    assert _schema_default(result, "season_start_month") == "9"
+    assert _schema_default(result, "degree_day_base") == 18.0
+
     room = weheat.entity_ids["thermostat_room_temperature"]
     result = await hass.config_entries.options.async_configure(
-        result["flow_id"], {CONF_OUTDOOR_ENTITY: outside, CONF_INDOOR_ENTITY: room}
+        result["flow_id"],
+        {
+            CONF_OUTDOOR_ENTITY: outside,
+            CONF_INDOOR_ENTITY: room,
+            "season_start_month": "10",
+            "season_end_month": "4",
+            "degree_day_base": 15.5,
+            "weighted_degree_days": True,
+        },
     )
     assert result["type"] is FlowResultType.CREATE_ENTRY
     await hass.async_block_till_done()
@@ -121,3 +132,8 @@ async def test_options_flow(
     data = insights_entry.runtime_data
     assert data.outdoor_entity_id == outside
     assert data.indoor_entity_id == room
+    settings = data.coordinator.settings
+    assert settings.season_start_month == 10
+    assert settings.season_end_month == 4
+    assert settings.degree_day_base == 15.5
+    assert settings.weighted_degree_days is True

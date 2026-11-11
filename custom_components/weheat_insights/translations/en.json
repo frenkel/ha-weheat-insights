@@ -29,14 +29,22 @@
   "options": {
     "step": {
       "init": {
-        "title": "Temperature sources",
+        "title": "Settings",
         "data": {
           "outdoor_entity": "Outdoor temperature",
-          "indoor_entity": "Indoor temperature (optional)"
+          "indoor_entity": "Indoor temperature (optional)",
+          "season_start_month": "Heating season starts in",
+          "season_end_month": "Heating season ends after",
+          "degree_day_base": "Degree-day base temperature",
+          "weighted_degree_days": "Weighted degree days"
         },
         "data_description": {
           "outdoor_entity": "Used for degree days and heat-loss analysis.",
-          "indoor_entity": "Used for heat-loss and cool-down analysis. Leave empty if you have none."
+          "indoor_entity": "Used for heat-loss and cool-down analysis. Leave empty if you have none.",
+          "season_start_month": "SCOP and heating per degree day are computed per heating season.",
+          "season_end_month": "The season includes this whole month.",
+          "degree_day_base": "Days with a mean outdoor temperature below this count as heating days. 18 °C is common in the Netherlands.",
+          "weighted_degree_days": "Count November–February ×1.1, March and October ×1.0 and April–September ×0.8 (Dutch convention)."
         }
       }
     }
@@ -98,6 +106,24 @@
       },
       "heat_per_degree_day_last_season": {
         "name": "Heating per degree day last season"
+      }
+    }
+  },
+  "selector": {
+    "month": {
+      "options": {
+        "1": "January",
+        "2": "February",
+        "3": "March",
+        "4": "April",
+        "5": "May",
+        "6": "June",
+        "7": "July",
+        "8": "August",
+        "9": "September",
+        "10": "October",
+        "11": "November",
+        "12": "December"
       }
     }
   }

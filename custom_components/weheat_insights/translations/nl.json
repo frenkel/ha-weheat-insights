@@ -29,14 +29,22 @@
   "options": {
     "step": {
       "init": {
-        "title": "Temperatuurbronnen",
+        "title": "Instellingen",
         "data": {
           "outdoor_entity": "Buitentemperatuur",
-          "indoor_entity": "Binnentemperatuur (optioneel)"
+          "indoor_entity": "Binnentemperatuur (optioneel)",
+          "season_start_month": "Stookseizoen begint in",
+          "season_end_month": "Stookseizoen eindigt na",
+          "degree_day_base": "Basistemperatuur graaddagen",
+          "weighted_degree_days": "Gewogen graaddagen"
         },
         "data_description": {
           "outdoor_entity": "Gebruikt voor graaddagen en de warmteverliesanalyse.",
-          "indoor_entity": "Gebruikt voor de warmteverlies- en afkoelanalyse. Laat leeg als je er geen hebt."
+          "indoor_entity": "Gebruikt voor de warmteverlies- en afkoelanalyse. Laat leeg als je er geen hebt.",
+          "season_start_month": "De SCOP en verwarming per graaddag worden per stookseizoen berekend.",
+          "season_end_month": "Deze maand hoort er helemaal bij.",
+          "degree_day_base": "Dagen met een gemiddelde buitentemperatuur hieronder tellen als stookdag. In Nederland is 18 °C gebruikelijk.",
+          "weighted_degree_days": "Telt november–februari ×1,1, maart en oktober ×1,0 en april–september ×0,8 (Nederlandse conventie)."
         }
       }
     }
@@ -98,6 +106,24 @@
       },
       "heat_per_degree_day_last_season": {
         "name": "Verwarming per graaddag vorig stookseizoen"
+      }
+    }
+  },
+  "selector": {
+    "month": {
+      "options": {
+        "1": "januari",
+        "2": "februari",
+        "3": "maart",
+        "4": "april",
+        "5": "mei",
+        "6": "juni",
+        "7": "juli",
+        "8": "augustus",
+        "9": "september",
+        "10": "oktober",
+        "11": "november",
+        "12": "december"
       }
     }
   }

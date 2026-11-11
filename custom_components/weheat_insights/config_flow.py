@@ -14,8 +14,12 @@ from homeassistant.config_entries import (
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.selector import (
+    BooleanSelector,
     EntitySelector,
     EntitySelectorConfig,
+    NumberSelector,
+    NumberSelectorConfig,
+    NumberSelectorMode,
     SelectOptionDict,
     SelectSelector,
     SelectSelectorConfig,
@@ -23,7 +27,20 @@ from homeassistant.helpers.selector import (
 )
 import voluptuous as vol
 
-from .const import CONF_HEAT_PUMP_ID, CONF_INDOOR_ENTITY, CONF_OUTDOOR_ENTITY, DOMAIN
+from .const import (
+    CONF_DEGREE_DAY_BASE,
+    CONF_HEAT_PUMP_ID,
+    CONF_INDOOR_ENTITY,
+    CONF_OUTDOOR_ENTITY,
+    CONF_SEASON_END_MONTH,
+    CONF_SEASON_START_MONTH,
+    CONF_WEIGHTED_DEGREE_DAYS,
+    DEFAULT_DEGREE_DAY_BASE,
+    DEFAULT_SEASON_END_MONTH,
+    DEFAULT_SEASON_START_MONTH,
+    DEFAULT_WEIGHTED_DEGREE_DAYS,
+    DOMAIN,
+)
 from .discovery import (
     WeheatHeatPump,
     WeheatKey,
@@ -81,6 +98,54 @@ def _sources_schema(
     return vol.Schema(
         {outdoor_key: TEMPERATURE_SELECTOR, indoor_key: TEMPERATURE_SELECTOR}
     )
+
+
+MONTH_SELECTOR = SelectSelector(
+    SelectSelectorConfig(
+        options=[str(month) for month in range(1, 13)],
+        mode=SelectSelectorMode.DROPDOWN,
+        translation_key="month",
+    )
+)
+BASE_SELECTOR = NumberSelector(
+    NumberSelectorConfig(
+        min=10, max=22, step=0.5, unit_of_measurement="°C", mode=NumberSelectorMode.BOX
+    )
+)
+def _calculation_schema(current: dict[str, Any]) -> dict:
+    """Form fields for the season and degree-day settings."""
+    return {
+        vol.Required(
+            CONF_SEASON_START_MONTH,
+            default=str(
+                current.get(CONF_SEASON_START_MONTH, DEFAULT_SEASON_START_MONTH)
+            ),
+        ): MONTH_SELECTOR,
+        vol.Required(
+            CONF_SEASON_END_MONTH,
+            default=str(current.get(CONF_SEASON_END_MONTH, DEFAULT_SEASON_END_MONTH)),
+        ): MONTH_SELECTOR,
+        vol.Required(
+            CONF_DEGREE_DAY_BASE,
+            default=current.get(CONF_DEGREE_DAY_BASE, DEFAULT_DEGREE_DAY_BASE),
+        ): BASE_SELECTOR,
+        vol.Required(
+            CONF_WEIGHTED_DEGREE_DAYS,
+            default=current.get(
+                CONF_WEIGHTED_DEGREE_DAYS, DEFAULT_WEIGHTED_DEGREE_DAYS
+            ),
+        ): BooleanSelector(),
+    }
+
+
+def _calculation_options(user_input: dict[str, Any]) -> dict[str, Any]:
+    """Normalise the season and degree-day input into stored options."""
+    return {
+        CONF_SEASON_START_MONTH: int(user_input[CONF_SEASON_START_MONTH]),
+        CONF_SEASON_END_MONTH: int(user_input[CONF_SEASON_END_MONTH]),
+        CONF_DEGREE_DAY_BASE: float(user_input[CONF_DEGREE_DAY_BASE]),
+        CONF_WEIGHTED_DEGREE_DAYS: bool(user_input[CONF_WEIGHTED_DEGREE_DAYS]),
+    }
 
 
 def _sources_options(hass: HomeAssistant, user_input: dict[str, Any]) -> dict:
@@ -169,19 +234,24 @@ class WeheatInsightsConfigFlow(ConfigFlow, domain=DOMAIN):
 
 
 class OptionsFlowHandler(OptionsFlowWithReload):
-    """Change the temperature sources later."""
+    """Change the temperature sources and calculation settings later."""
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Edit the temperature sources."""
+        """Edit the temperature sources and calculation settings."""
         if user_input is not None:
-            return self.async_create_entry(data=_sources_options(self.hass, user_input))
+            return self.async_create_entry(
+                data={
+                    **_sources_options(self.hass, user_input),
+                    **_calculation_options(user_input),
+                }
+            )
 
+        current = dict(self.config_entry.options)
         pump = async_get_heat_pump(self.hass, self.config_entry.data[CONF_HEAT_PUMP_ID])
+        sources = _sources_schema(self.hass, pump, current)
         return self.async_show_form(
             step_id="init",
-            data_schema=_sources_schema(
-                self.hass, pump, dict(self.config_entry.options)
-            ),
+            data_schema=vol.Schema({**sources.schema, **_calculation_schema(current)}),
         )
