@@ -112,6 +112,8 @@ BASE_SELECTOR = NumberSelector(
         min=10, max=22, step=0.5, unit_of_measurement="°C", mode=NumberSelectorMode.BOX
     )
 )
+
+
 def _calculation_schema(current: dict[str, Any]) -> dict:
     """Form fields for the season and degree-day settings."""
     return {

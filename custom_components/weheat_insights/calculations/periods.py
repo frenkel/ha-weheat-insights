@@ -6,7 +6,8 @@ from collections.abc import Callable, Iterable, Mapping
 from datetime import date
 
 
-def _add_months(day: date, months: int) -> date:
+def add_months(day: date, months: int) -> date:
+    """First day of the month ``months`` after the month of ``day``."""
     index = day.year * 12 + (day.month - 1) + months
     return date(index // 12, index % 12 + 1, 1)
 
@@ -26,7 +27,7 @@ def season_bounds(today: date, start_month: int, end_month: int) -> tuple[date, 
     start = date(today.year, start_month, 1)
     if start > today:
         start = date(today.year - 1, start_month, 1)
-    return start, _add_months(start, length)
+    return start, add_months(start, length)
 
 
 def previous_season(start: date, end: date) -> tuple[date, date]:

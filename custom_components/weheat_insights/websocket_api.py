@@ -8,17 +8,20 @@ from homeassistant.components import websocket_api
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er
+from homeassistant.util import dt as dt_util
 import voluptuous as vol
 
 from .const import DOMAIN
 from .degree_day_statistics import statistic_id as degree_day_statistic_id
 from .discovery import WeheatKey
+from .history import MAX_COUNT, async_history
 
 
 @callback
 def async_register(hass: HomeAssistant) -> None:
     """Register the WebSocket commands."""
     websocket_api.async_register_command(hass, ws_dashboard_config)
+    websocket_api.async_register_command(hass, ws_performance_history)
 
 
 @websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/dashboard_config"})
@@ -60,3 +63,47 @@ def ws_dashboard_config(
         )
     heat_pumps.sort(key=lambda pump: pump["name"].casefold())
     connection.send_result(msg["id"], {"heat_pumps": heat_pumps})
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): f"{DOMAIN}/performance_history",
+        vol.Required("entry_id"): str,
+        vol.Optional("period", default="month"): vol.In(list(MAX_COUNT)),
+        vol.Optional("count"): vol.All(int, vol.Range(min=1, max=92)),
+    }
+)
+@websocket_api.async_response
+async def ws_performance_history(
+    hass: HomeAssistant,
+    connection: websocket_api.ActiveConnection,
+    msg: dict[str, Any],
+) -> None:
+    """Return COP per day, month or season for one heat pump."""
+    entry = hass.config_entries.async_get_entry(msg["entry_id"])
+    if (
+        entry is None
+        or entry.domain != DOMAIN
+        or entry.state is not ConfigEntryState.LOADED
+    ):
+        connection.send_error(msg["id"], "not_found", "Heat pump not set up")
+        return
+    data = entry.runtime_data
+    kind = msg["period"]
+    count = msg.get("count", {"day": 30, "month": 13, "season": 5}[kind])
+    periods = await async_history(
+        hass,
+        data.entities,
+        data.coordinator.settings,
+        today=dt_util.now().date(),
+        kind=kind,
+        count=count,
+    )
+    connection.send_result(
+        msg["id"],
+        {
+            "period": kind,
+            "has_dhw": WeheatKey.ELECTRICITY_USED_DHW in data.entities,
+            "periods": periods,
+        },
+    )

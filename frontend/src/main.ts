@@ -8,6 +8,7 @@
  */
 import { errorDashboard, generateDashboard } from "./dashboard";
 import { localizer } from "./localize";
+import { PERFORMANCE_CARD_TAG, WeheatInsightsPerformanceCard } from "./performance-card";
 import type { DashboardConfigResponse, HomeAssistant, LovelaceConfig } from "./types";
 
 const STRATEGY_TAG = "ll-strategy-dashboard-weheat-insights";
@@ -31,10 +32,24 @@ if (!customElements.get(STRATEGY_TAG)) {
   customElements.define(STRATEGY_TAG, WeheatInsightsDashboardStrategy);
 }
 
+if (!customElements.get(PERFORMANCE_CARD_TAG)) {
+  customElements.define(PERFORMANCE_CARD_TAG, WeheatInsightsPerformanceCard);
+}
+
 declare global {
   interface Window {
     customStrategies?: { type: string; name: string; description: string; strategyType?: string }[];
+    customCards?: { type: string; name: string; description: string }[];
   }
+}
+
+window.customCards = window.customCards ?? [];
+if (!window.customCards.some((c) => c.type === PERFORMANCE_CARD_TAG)) {
+  window.customCards.push({
+    type: PERFORMANCE_CARD_TAG,
+    name: "Weheat Insights performance",
+    description: "COP per day, month or season for heating and hot water (unofficial)",
+  });
 }
 
 // Lets the "add dashboard" dialog list this strategy where supported.
