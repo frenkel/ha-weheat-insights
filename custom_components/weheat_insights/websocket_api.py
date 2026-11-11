@@ -11,6 +11,7 @@ from homeassistant.helpers import entity_registry as er
 import voluptuous as vol
 
 from .const import DOMAIN
+from .degree_day_statistics import statistic_id as degree_day_statistic_id
 from .discovery import WeheatKey
 
 
@@ -48,6 +49,11 @@ def ws_dashboard_config(
                 "has_dhw": WeheatKey.DHW_TOP_TEMPERATURE in data.entities,
                 "weheat": {key.value: eid for key, eid in data.entities.items()},
                 "insights": insights,
+                "degree_days_statistic_id": (
+                    degree_day_statistic_id(data.pump.uuid)
+                    if data.outdoor_entity_id
+                    else None
+                ),
                 "outdoor_entity_id": data.outdoor_entity_id,
                 "indoor_entity_id": data.indoor_entity_id,
             }

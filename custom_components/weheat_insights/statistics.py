@@ -47,6 +47,11 @@ def _row_date(row: StatisticsRow) -> date:
     return dt_util.as_local(dt_util.utc_from_timestamp(row["start"])).date()
 
 
+def _within[T](rows: dict[date, T], start: date, end: date) -> dict[date, T]:
+    """Keep [start, end): the recorder can include the period starting at end."""
+    return {day: value for day, value in rows.items() if start <= day < end}
+
+
 def counter_entities(entities: Mapping[WeheatKey, str]) -> dict[str, str]:
     """EnergyTotals field -> entity_id, for the counters this pump has."""
     return {
@@ -96,7 +101,7 @@ async def async_energy(
         {"energy": UnitOfEnergy.KILO_WATT_HOUR},
         {"change"},
     )
-    return rows_to_energy(rows, counters)
+    return _within(rows_to_energy(rows, counters), start, end)
 
 
 async def async_daily_means(
@@ -119,4 +124,4 @@ async def async_daily_means(
         {"temperature": UnitOfTemperature.CELSIUS},
         {"mean"},
     )
-    return rows_to_means(rows.get(entity_id, ()))
+    return _within(rows_to_means(rows.get(entity_id, ())), start, end)

@@ -33,6 +33,7 @@ from .const import (
     DOMAIN,
     LOGGER,
 )
+from .degree_day_statistics import DegreeDayStatistics
 from .statistics import async_daily_means, async_energy
 
 if TYPE_CHECKING:
@@ -178,6 +179,7 @@ class WeheatInsightsCoordinator(DataUpdateCoordinator[InsightsData]):
             update_interval=UPDATE_INTERVAL,
         )
         self.settings = Settings.from_options(config_entry.options)
+        self.degree_day_statistics: DegreeDayStatistics | None = None
 
     async def _async_update_data(self) -> InsightsData:
         data = self.config_entry.runtime_data
@@ -186,4 +188,11 @@ class WeheatInsightsCoordinator(DataUpdateCoordinator[InsightsData]):
         end = today + timedelta(days=1)
         energy = await async_energy(self.hass, data.entities, start, end)
         means = await async_daily_means(self.hass, data.outdoor_entity_id, start, end)
+        if self.degree_day_statistics is None:
+            self.degree_day_statistics = DegreeDayStatistics(
+                self.hass, data.pump.uuid, f"{data.pump.name} degree days"
+            )
+        await self.degree_day_statistics.async_update(
+            today, self.settings, data.outdoor_entity_id, means
+        )
         return compute(today, self.settings, energy, means)
