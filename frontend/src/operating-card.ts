@@ -134,9 +134,11 @@ export class WeheatInsightsOperatingCard extends LitElement {
         <span>${name}</span>
         <span class="detail">${detail}</span>
       </span>
-      <span class="count big">${this._num(s, "today_count") ?? "–"}</span>
-      <span class="count big">${this._num(s, "7d_count") ?? "–"}</span>
-      <span class="count big">${this._num(s, "30d_count") ?? "–"}</span>
+      ${(["today_count", "7d_count", "30d_count"] as const).map((key) => {
+        const count = this._num(s, key);
+        // "4×": the big numbers are how often the state occurred.
+        return html`<span class="count big">${count == null ? "–" : html`${count}<span class="times">×</span>`}</span>`;
+      })}
     </div>`;
   }
 
@@ -214,6 +216,12 @@ export class WeheatInsightsOperatingCard extends LitElement {
     .count {
       text-align: right;
       white-space: nowrap;
+    }
+    .times {
+      font-size: 14px;
+      font-weight: 400;
+      color: var(--secondary-text-color);
+      margin-left: 1px;
     }
     .big {
       font-size: 20px;
