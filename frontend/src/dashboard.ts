@@ -279,8 +279,8 @@ export function houseView(pump: HeatPumpConfig, t: Localize, index: number): Lov
   // Side by side in a wide section, so both columns end at about the same height.
   const degreeDayCharts = section(
     [
-      degreeDays ? changeBars(t("degree_days_per_month"), [degreeDays], "month", 400, 6) : null,
-      degreeDays ? changeBars(t("degree_days_per_day"), [degreeDays], "day", 30, 6) : null,
+      degreeDays ? changeBars(t("degree_days_per_month"), [degreeDays], "month", 400, 12) : null,
+      degreeDays ? changeBars(t("degree_days_per_day"), [degreeDays], "day", 30, 12) : null,
     ],
     2,
     true,
@@ -446,8 +446,8 @@ export function operationView(pump: HeatPumpConfig, t: Localize, index: number):
   const defrost = section(
     [
       heading(t("op_defrost_vs_cold"), "mdi:snowflake-melt"),
-      changeBars(t("defrost"), counters("_periods_total", ["defrost"]), "day", 30, 6),
-      degreeDays ? changeBars(t("degree_days_per_day"), [degreeDays], "day", 30, 6) : null,
+      changeBars(t("defrost"), counters("_periods_total", ["defrost"]), "day", 30, 12),
+      degreeDays ? changeBars(t("degree_days_per_day"), [degreeDays], "day", 30, 12) : null,
     ],
     2,
   );
