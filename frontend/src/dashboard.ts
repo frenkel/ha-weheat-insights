@@ -313,7 +313,6 @@ export function curveTable(pump: HeatPumpConfig, t: Localize): string | null {
   const rows = CURVE_POINTS.filter(([, key]) => pump.insights[key]);
   if (!rows.length) return null;
   const first = pump.insights[rows[0][1]]!;
-  const deg = (expr: string) => `{{ (${expr}) ~ ' °C' if (${expr}) is not none else '–' }}`;
   const lines = [
     `{% set reason = state_attr('${first}', 'no_advice_reason') %}`,
     `**${t("curve_target")}:** {{ state_attr('${first}', 'target_room_temperature') }} °C` +
@@ -321,16 +320,17 @@ export function curveTable(pump: HeatPumpConfig, t: Localize): string | null {
     "",
     `{% if reason %}${t("curve_no_advice")} {{ {'no_heat_loss': '${jinja(t("reason_no_heat_loss"))}', 'too_few_steady_hours': '${jinja(t("reason_too_few_steady_hours"))}'}.get(reason, reason) }}{% endif %}`,
     "",
-    `| ${t("curve_outdoor")} | ${t("curve_current")} | ${t("curve_app")} | ${t("curve_portal")} | ${t("curve_range")} |`,
-    "|---:|---:|---:|---:|:---|",
+    `| ${t("curve_outdoor")} (°C) | ${t("curve_current")} (°C) | ${t("curve_advice")} (°C) | ${t("curve_range")} (°C) |`,
+    "|---:|---:|---:|:---|",
     ...rows.map(([outdoor, key]) => {
       const e = pump.insights[key]!;
       const value = `states('${e}') | float(none)`;
+      const current = `state_attr('${e}', 'current')`;
       return (
-        `| ${outdoor} °C | ${deg(`state_attr('${e}', 'current')`)} | ${deg(`state_attr('${e}', 'app')`)} | ` +
-        `{{ '**' ~ (${value}) ~ ' °C**' if (${value}) is not none else '–' }} | ` +
+        `| ${outdoor} | {{ ${current} if ${current} is not none else '–' }} | ` +
+        `{{ '**' ~ (${value}) ~ '**' if (${value}) is not none else '–' }} | ` +
         `{% if state_attr('${e}', 'no_heat_needed') %}${t("curve_no_heat")}{% elif state_attr('${e}', 'range_low') is not none %}` +
-        `{{ state_attr('${e}', 'range_low') }}–{{ state_attr('${e}', 'range_high') }} °C` +
+        `{{ state_attr('${e}', 'range_low') }}–{{ state_attr('${e}', 'range_high') }}` +
         `{% if state_attr('${e}', 'extrapolated') %} (${t("curve_extrapolated")}){% endif %}{% endif %} |`
       );
     }),

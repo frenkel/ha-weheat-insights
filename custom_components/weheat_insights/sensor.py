@@ -578,13 +578,13 @@ class CurveAdviceSensor(
 
     @property
     def native_value(self) -> float | None:
-        """Advised supply temperature, one decimal (as the web portal accepts)."""
+        """Advised supply temperature, one decimal."""
         point = self._point()
         return None if point is None else round(point.supply_c, 1)
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        """Return the app value, range, current setting and caveats."""
+        """Return the range, current setting and caveats."""
         curve = self.coordinator.data.curve
         point = self._point()
         attrs: dict[str, Any] = {"outdoor_temperature": self._outdoor}
@@ -599,7 +599,6 @@ class CurveAdviceSensor(
                 attrs["no_advice_reason"] = curve.reason
         if point is not None:
             attrs |= {
-                "app": point.app_c,
                 "range_low": round(point.supply_low_c, 1),
                 "range_high": round(point.supply_high_c, 1),
                 "heat_demand_kw": round(point.heat_kw, 2),

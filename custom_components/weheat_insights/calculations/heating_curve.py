@@ -20,7 +20,6 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
-import math
 from statistics import median
 
 # Outdoor temperatures at which the Weheat app and portal define the curve.
@@ -87,7 +86,7 @@ class CurvePoint:
 
     outdoor_c: float
     heat_kw: float
-    supply_c: float  # one decimal precision is meaningful for the portal
+    supply_c: float
     supply_low_c: float
     supply_high_c: float
     extrapolated: bool
@@ -96,11 +95,6 @@ class CurvePoint:
     def no_heat_needed(self) -> bool:
         """Above the balance point: the value hardly matters (≤ room target)."""
         return self.heat_kw <= 0
-
-    @property
-    def app_c(self) -> int:
-        """Whole degrees for the app, rounded up so the house stays warm."""
-        return math.ceil(self.supply_c - 1e-9)
 
 
 def heat_demand_kw(

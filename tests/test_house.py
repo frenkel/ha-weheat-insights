@@ -141,7 +141,6 @@ async def test_heat_loss_from_statistics(hass: HomeAssistant, freezer) -> None:
     demand = (4.8 * 11 - 10) / 24
     expected = 20 + (demand / 0.12) ** (1 / 1.2) + 0.75 * demand
     assert float(advice.state) == pytest.approx(expected, abs=0.6)
-    assert advice.attributes["app"] >= float(advice.state)
     assert advice.attributes["current"] == pytest.approx(27.0, abs=0.3)
     assert advice.attributes["extrapolated"] is False
     cold = hass.states.get(_entity(hass, "curve_advice_minus_20"))
@@ -271,13 +270,22 @@ def test_steady_hours_need_heating_neighbours_and_no_dhw() -> None:
 
 def test_current_curve_from_setpoint() -> None:
     base = datetime(2026, 11, 1, tzinfo=dt_util.UTC)
-    outdoor, setpoint = {}, {}
-    for h, (out, sp) in enumerate(
-        [(8.5, 27.0), (9.2, 27.0), (9.8, 26.6), (15.0, 23.0), (14.6, 23.2)]
-    ):
-        outdoor[base + timedelta(hours=h)] = out
-        setpoint[base + timedelta(hours=h)] = sp
-    curve = current_curve(outdoor, setpoint)
+    outdoor, setpoint, heating, dhw = {}, {}, {}, {}
+    rows = [
+        (8.5, 27.0, 1.0),
+        (9.2, 27.0, 1.0),
+        (9.8, 26.6, 1.0),
+        (9.0, 10.0, 0.0),  # not heating: placeholder setpoint is ignored
+        (9.1, 50.0, 1.0),  # hot water: DHW target is ignored
+        (15.0, 23.0, 1.0),
+        (14.6, 23.2, 1.0),
+        (15.2, 10.0, 0.0),
+    ]
+    for h, (out, sp, kwh) in enumerate(rows):
+        t = base + timedelta(hours=h)
+        outdoor[t], setpoint[t], heating[t] = out, sp, kwh
+    dhw[base + timedelta(hours=4)] = 1.5
+    curve = current_curve(outdoor, setpoint, heating, dhw)
     assert curve[9.0] == pytest.approx(27.0)
-    assert curve[15.0] is None  # only two hours near 15 °C
+    assert curve[15.0] is None  # only two heating hours near 15 °C
     assert curve[-20.0] is None

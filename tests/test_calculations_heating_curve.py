@@ -69,8 +69,6 @@ def test_advice_points() -> None:
     cold = by_outdoor[-20.0]
     assert cold.extrapolated is True
     assert cold.supply_low_c < cold.supply_c < cold.supply_high_c
-    assert cold.app_c >= cold.supply_c  # rounded up for the app
-    assert cold.app_c - cold.supply_c < 1
 
     nine = by_outdoor[9.0]
     assert nine.extrapolated is False

@@ -168,8 +168,8 @@ For each point of the Weheat curve:
 3. Above the balance point no heat is needed; the advice there is the room
    temperature.
 
-The advice is given with one decimal (the Weheat web portal accepts that)
-and in whole degrees for the app, **rounded up** so the house stays warm.
+The advice is given with one decimal, which the Weheat web portal accepts;
+in the app, which only takes whole degrees, round up so the house stays warm.
 The range comes from the 95 % interval of the heat-loss coefficient. Points
 far outside the outdoor temperatures you have measured are marked as
 extrapolated. The current curve is read from the Weheat water setpoint
