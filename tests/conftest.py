@@ -37,8 +37,11 @@ WEHEAT_SENSORS = {
 
 
 @pytest.fixture(autouse=True)
-def auto_enable_custom_integrations(enable_custom_integrations):
-    """Enable loading custom integrations in every test."""
+def auto_enable_custom_integrations(recorder_mock, enable_custom_integrations):
+    """Enable custom integrations and an in-memory recorder in every test.
+
+    ``recorder_mock`` must come before anything that creates ``hass``.
+    """
     return
 
 

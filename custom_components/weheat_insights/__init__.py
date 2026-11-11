@@ -22,6 +22,7 @@ from .const import (
     DOMAIN,
     WEHEAT_DOMAIN,
 )
+from .coordinator import WeheatInsightsCoordinator
 from .discovery import (
     WeheatHeatPump,
     WeheatKey,
@@ -44,6 +45,7 @@ class WeheatInsightsData:
     entities: dict[WeheatKey, str]
     outdoor_entity_id: str | None
     indoor_entity_id: str | None
+    coordinator: WeheatInsightsCoordinator | None = None
 
 
 type WeheatInsightsConfigEntry = ConfigEntry[WeheatInsightsData]
@@ -77,6 +79,10 @@ async def async_setup_entry(
         ),
         indoor_entity_id=resolve_entity_id(hass, entry.options.get(CONF_INDOOR_ENTITY)),
     )
+
+    coordinator = WeheatInsightsCoordinator(hass, entry)
+    entry.runtime_data.coordinator = coordinator
+    await coordinator.async_config_entry_first_refresh()
 
     entry.async_on_unload(_async_watch_weheat_entities(hass, entry, uuid))
 

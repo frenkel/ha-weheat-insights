@@ -14,6 +14,7 @@
   "dependencies": [
     "frontend",
     "http",
+    "recorder",
     "websocket_api"
   ],
   "documentation": "https://github.com/frenkel/ha-weheat-insights",
