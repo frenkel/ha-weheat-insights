@@ -30,6 +30,7 @@ from .discovery import (
     async_map_heat_pump_entities,
 )
 from .frontend import async_register_frontend
+from .house import HouseCoordinator
 from .websocket_api import async_register as async_register_websocket
 
 PLATFORMS: list[Platform] = [Platform.SENSOR]
@@ -46,6 +47,7 @@ class WeheatInsightsData:
     outdoor_entity_id: str | None
     indoor_entity_id: str | None
     coordinator: WeheatInsightsCoordinator | None = None
+    house: HouseCoordinator | None = None
 
 
 type WeheatInsightsConfigEntry = ConfigEntry[WeheatInsightsData]
@@ -83,6 +85,9 @@ async def async_setup_entry(
     coordinator = WeheatInsightsCoordinator(hass, entry)
     entry.runtime_data.coordinator = coordinator
     await coordinator.async_config_entry_first_refresh()
+    house = HouseCoordinator(hass, entry)
+    entry.runtime_data.house = house
+    await house.async_config_entry_first_refresh()
 
     entry.async_on_unload(_async_watch_weheat_entities(hass, entry, uuid))
 

@@ -115,6 +115,24 @@
       },
       "scop_heat_pump_season": {
         "name": "SCOP heat pump this season"
+      },
+      "heat_loss_coefficient": {
+        "name": "Heat-loss coefficient"
+      },
+      "heat_loss_design_load": {
+        "name": "Heat loss at -10 °C"
+      },
+      "balance_point": {
+        "name": "Heating balance point"
+      },
+      "cool_down_time_constant": {
+        "name": "Cool-down time constant"
+      },
+      "cool_down_rate": {
+        "name": "Cool-down rate at 15 K"
+      },
+      "thermal_mass": {
+        "name": "Thermal mass"
       }
     }
   },

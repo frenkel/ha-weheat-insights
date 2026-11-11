@@ -45,6 +45,8 @@ class WeheatKey(StrEnum):
     ENERGY_OUTPUT_HEATING = "energy_output_heating"
     ENERGY_OUTPUT_DHW = "energy_output_dhw"
     ENERGY_OUTPUT_DEFROST = "energy_output_defrost"
+    GAS_BOILER = "indoor_unit_gas_boiler_state"
+    ELECTRIC_HEATER = "indoor_unit_electric_heater_state"
 
 
 _KEYS = {key.value: key for key in WeheatKey}

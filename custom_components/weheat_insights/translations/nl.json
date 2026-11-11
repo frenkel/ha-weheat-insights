@@ -115,6 +115,24 @@
       },
       "scop_heat_pump_season": {
         "name": "SCOP warmtepomp dit stookseizoen"
+      },
+      "heat_loss_coefficient": {
+        "name": "Warmteverliescoëfficiënt"
+      },
+      "heat_loss_design_load": {
+        "name": "Warmteverlies bij -10 °C"
+      },
+      "balance_point": {
+        "name": "Stookgrens"
+      },
+      "cool_down_time_constant": {
+        "name": "Afkoeltijdconstante"
+      },
+      "cool_down_rate": {
+        "name": "Afkoelsnelheid bij 15 K"
+      },
+      "thermal_mass": {
+        "name": "Warmtecapaciteit"
       }
     }
   },

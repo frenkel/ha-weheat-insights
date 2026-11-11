@@ -20,7 +20,7 @@ from custom_components.weheat_insights.const import (
     CONF_OUTDOOR_ENTITY,
     DOMAIN,
 )
-from custom_components.weheat_insights.sensor import PERIOD_SENSORS
+from custom_components.weheat_insights.sensor import HOUSE_SENSORS, PERIOD_SENSORS
 
 from .conftest import PUMP_UUID, WEHEAT_SENSORS, add_weheat_pump
 
@@ -146,11 +146,11 @@ def test_every_sensor_has_a_translated_name(lang: str) -> None:
     names = json.loads((COMPONENT / "translations" / f"{lang}.json").read_text())[
         "entity"
     ]["sensor"]
-    keys = {d.translation_key for d in PERIOD_SENSORS} | {"delta_t"}
+    keys = {d.translation_key for d in [*PERIOD_SENSORS, *HOUSE_SENSORS]} | {"delta_t"}
     assert keys <= names.keys()
 
 
 def test_every_sensor_has_an_icon() -> None:
     icons = json.loads((COMPONENT / "icons.json").read_text())["entity"]["sensor"]
-    keys = {d.translation_key for d in PERIOD_SENSORS} | {"delta_t"}
+    keys = {d.translation_key for d in [*PERIOD_SENSORS, *HOUSE_SENSORS]} | {"delta_t"}
     assert keys <= icons.keys()

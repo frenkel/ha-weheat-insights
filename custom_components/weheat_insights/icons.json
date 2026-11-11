@@ -60,6 +60,24 @@
       },
       "scop_heat_pump_season": {
         "default": "mdi:heat-pump-outline"
+      },
+      "heat_loss_coefficient": {
+        "default": "mdi:home-thermometer"
+      },
+      "heat_loss_design_load": {
+        "default": "mdi:home-lightning-bolt"
+      },
+      "balance_point": {
+        "default": "mdi:thermometer-check"
+      },
+      "cool_down_time_constant": {
+        "default": "mdi:timer-sand"
+      },
+      "cool_down_rate": {
+        "default": "mdi:thermometer-minus"
+      },
+      "thermal_mass": {
+        "default": "mdi:weight"
       }
     }
   }

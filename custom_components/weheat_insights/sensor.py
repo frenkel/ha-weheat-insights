@@ -24,7 +24,9 @@ from homeassistant.const import (
     STATE_UNAVAILABLE,
     STATE_UNKNOWN,
     UnitOfEnergy,
+    UnitOfPower,
     UnitOfTemperature,
+    UnitOfTime,
 )
 from homeassistant.core import Event, EventStateChangedData, HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
@@ -37,6 +39,7 @@ from .calculations.temperature import delta_t
 from .coordinator import InsightsData, PeriodResult, WeheatInsightsCoordinator
 from .discovery import WeheatHeatPump, WeheatKey
 from .entity import WeheatInsightsEntity
+from .house import HouseCoordinator, HouseData
 
 PARALLEL_UPDATES = 0
 
@@ -60,6 +63,11 @@ async def async_setup_entry(
             PeriodSensor(data.pump, data.coordinator, description)
             for description in PERIOD_SENSORS
             if has_dhw or not description.dhw_only
+        )
+    if data.house is not None:
+        entities.extend(
+            HouseSensor(data.pump, data.house, description)
+            for description in HOUSE_SENSORS
         )
     async_add_entities(entities)
 
@@ -340,3 +348,129 @@ class PeriodSensor(
         if self.entity_description.attrs_fn is None:
             return None
         return self.entity_description.attrs_fn(self._result)
+
+
+@dataclass(frozen=True, kw_only=True)
+class HouseSensorDescription(SensorEntityDescription):
+    """A figure from the house analysis."""
+
+    value_fn: Callable[[HouseData], float | None]
+
+
+def _house_attrs(data: HouseData) -> dict[str, Any]:
+    result = data.heat_loss
+    fit = result.fit
+    attrs: dict[str, Any] = {
+        "period_start": data.period_start.isoformat(),
+        "period_end": data.period_end.isoformat(),
+        "days_used": result.used,
+        "temperature_spread_k": round(result.spread_k, 1),
+        "indoor_temperature_assumed": data.indoor_assumed,
+    }
+    if fit is not None:
+        attrs |= {
+            "confidence_95_w_per_k": _round(result.coefficient_ci95, 1),
+            "r_squared": round(fit.r_squared, 3),
+            "free_heat_kwh_per_day": round(-fit.intercept, 1),
+        }
+    if result.reason is not None:
+        attrs["no_result_reason"] = result.reason
+    if data.has_other_heat_source:
+        # Binary sensors have no long-term statistics: other heat sources can
+        # only be detected within the recorder's history (10 days by default).
+        attrs["other_heat_source_detection_limited"] = True
+    return attrs
+
+
+def _cool_down_attrs(data: HouseData) -> dict[str, Any]:
+    if data.cool_down is None:
+        return {"requires_indoor_sensor": True}
+    episodes = data.cool_down.episodes
+    return {
+        "episodes": len(episodes),
+        "last_episode": episodes[-1].start.isoformat() if episodes else None,
+    }
+
+
+HOUSE_SENSORS: list[HouseSensorDescription] = [
+    HouseSensorDescription(
+        key="heat_loss_coefficient",
+        translation_key="heat_loss_coefficient",
+        native_unit_of_measurement="W/K",
+        suggested_display_precision=0,
+        value_fn=lambda d: d.heat_loss.coefficient_w_per_k,
+    ),
+    HouseSensorDescription(
+        key="heat_loss_design_load",
+        translation_key="heat_loss_design_load",
+        device_class=SensorDeviceClass.POWER,
+        native_unit_of_measurement=UnitOfPower.KILO_WATT,
+        suggested_display_precision=1,
+        value_fn=lambda d: d.heat_loss.design_load_kw,
+    ),
+    HouseSensorDescription(
+        key="balance_point",
+        translation_key="balance_point",
+        device_class=SensorDeviceClass.TEMPERATURE,
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        suggested_display_precision=1,
+        value_fn=lambda d: d.heat_loss.balance_point_c,
+    ),
+    HouseSensorDescription(
+        key="cool_down_time_constant",
+        translation_key="cool_down_time_constant",
+        device_class=SensorDeviceClass.DURATION,
+        native_unit_of_measurement=UnitOfTime.HOURS,
+        suggested_display_precision=0,
+        value_fn=lambda d: None if d.cool_down is None else d.cool_down.tau_h,
+    ),
+    HouseSensorDescription(
+        key="cool_down_rate",
+        translation_key="cool_down_rate",
+        native_unit_of_measurement="K/h",
+        suggested_display_precision=2,
+        value_fn=lambda d: None if d.cool_down is None else d.cool_down.rate_k_per_h(),
+    ),
+    HouseSensorDescription(
+        key="thermal_mass",
+        translation_key="thermal_mass",
+        native_unit_of_measurement="kWh/K",
+        suggested_display_precision=1,
+        value_fn=lambda d: (
+            None
+            if d.cool_down is None
+            else d.cool_down.thermal_mass_kwh_per_k(d.heat_loss.coefficient_w_per_k)
+        ),
+    ),
+]
+
+
+class HouseSensor(
+    CoordinatorEntity[HouseCoordinator], WeheatInsightsEntity, SensorEntity
+):
+    """Heat loss, balance point and cool-down figures of the house."""
+
+    entity_description: HouseSensorDescription
+
+    def __init__(
+        self,
+        pump: WeheatHeatPump,
+        coordinator: HouseCoordinator,
+        description: HouseSensorDescription,
+    ) -> None:
+        """Initialise the sensor."""
+        CoordinatorEntity.__init__(self, coordinator)
+        WeheatInsightsEntity.__init__(self, pump, description.key)
+        self.entity_description = description
+
+    @property
+    def native_value(self) -> float | None:
+        """Return the estimate."""
+        return _round(self.entity_description.value_fn(self.coordinator.data), 3)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Return the quality of the estimate."""
+        if self.entity_description.key.startswith(("cool_down", "thermal")):
+            return _cool_down_attrs(self.coordinator.data)
+        return _house_attrs(self.coordinator.data)

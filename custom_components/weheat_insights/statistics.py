@@ -10,14 +10,16 @@ from __future__ import annotations
 from collections.abc import Iterable, Mapping
 from dataclasses import replace
 from datetime import date, datetime
+from functools import partial
 
 from homeassistant.components.recorder import get_instance
+from homeassistant.components.recorder.history import get_significant_states
 from homeassistant.components.recorder.statistics import (
     StatisticsRow,
     statistics_during_period,
 )
-from homeassistant.const import UnitOfEnergy, UnitOfTemperature
-from homeassistant.core import HomeAssistant
+from homeassistant.const import STATE_ON, UnitOfEnergy, UnitOfTemperature
+from homeassistant.core import HomeAssistant, State
 from homeassistant.util import dt as dt_util
 
 from .calculations.performance import EnergyTotals
@@ -125,3 +127,87 @@ async def async_daily_means(
         {"mean"},
     )
     return _within(rows_to_means(rows.get(entity_id, ())), start, end)
+
+
+async def async_series(
+    hass: HomeAssistant,
+    statistic_ids: Mapping[str, str],
+    start: datetime,
+    end: datetime,
+    *,
+    period: Period,
+    kind: str,
+    units: dict[str, str] | None = None,
+) -> dict[str, dict[datetime, float]]:
+    """Fetch one statistic type ("mean" or "change") for several statistics.
+
+    ``statistic_ids`` maps our own names to statistic ids. The result maps
+    each name to {period start (local, aware): value}.
+    """
+    ids = {sid for sid in statistic_ids.values() if sid}
+    if not ids:
+        return {name: {} for name in statistic_ids}
+    rows = await get_instance(hass).async_add_executor_job(
+        statistics_during_period,
+        hass,
+        start,
+        end,
+        ids,
+        period,
+        units,
+        {kind},  # type: ignore[arg-type]
+    )
+    result: dict[str, dict[datetime, float]] = {}
+    for name, sid in statistic_ids.items():
+        series: dict[datetime, float] = {}
+        for row in rows.get(sid, ()) if sid else ():
+            value = row.get(kind)  # type: ignore[misc]
+            when = dt_util.as_local(dt_util.utc_from_timestamp(row["start"]))
+            if value is not None and start <= when < end:
+                series[when] = value
+        result[name] = series
+    return result
+
+
+def on_days(states: Iterable[State], end: datetime) -> set[date]:
+    """Local dates during which an on/off entity was on at some point."""
+    days: set[date] = set()
+    ordered = sorted(states, key=lambda state: state.last_changed)
+    for index, state in enumerate(ordered):
+        if state.state != STATE_ON:
+            continue
+        until = ordered[index + 1].last_changed if index + 1 < len(ordered) else end
+        day = dt_util.as_local(state.last_changed).date()
+        last = dt_util.as_local(until).date()
+        while day <= last:
+            days.add(day)
+            day = date.fromordinal(day.toordinal() + 1)
+    return days
+
+
+async def async_on_days(
+    hass: HomeAssistant, entity_ids: Iterable[str], start: datetime, end: datetime
+) -> set[date]:
+    """Days on which any of the entities was on, as far as history goes back.
+
+    Binary sensors have no long-term statistics, so this only covers the
+    recorder's state history (10 days by default).
+    """
+    ids = [entity_id for entity_id in entity_ids if entity_id]
+    if not ids:
+        return set()
+    states = await get_instance(hass).async_add_executor_job(
+        partial(
+            get_significant_states,
+            hass,
+            start,
+            end,
+            ids,
+            significant_changes_only=False,
+            no_attributes=True,
+        )
+    )
+    days: set[date] = set()
+    for entity_states in states.values():
+        days |= on_days((s for s in entity_states if isinstance(s, State)), end)
+    return days
