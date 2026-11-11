@@ -122,7 +122,8 @@ class OperatingTracker:
         """
         seconds = self.totals[group]["seconds"]
         if self.open is not None and self.open[0] == group:
-            seconds += max(0.0, ((now or dt_util.utcnow()) - self.open[1]).total_seconds())
+            running = (now or dt_util.utcnow()) - self.open[1]
+            seconds += max(0.0, running.total_seconds())
         return seconds
 
     # -- internals -----------------------------------------------------------
