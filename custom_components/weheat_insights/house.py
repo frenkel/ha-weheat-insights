@@ -79,6 +79,116 @@ def build_hour_points(
     ]
 
 
+# An hour counts for the heating curve when the pump delivered at least this
+# much space-heating heat and (almost) no hot water: hourly means of hours
+# that were mostly idle or doing DHW say nothing about the heating curve.
+MIN_HEATING_KWH_PER_HOUR = 0.5
+MAX_DHW_KWH_PER_HOUR = 0.05
+
+
+def supply_curve_points(
+    outdoor: dict[datetime, float],
+    supply: dict[datetime, float],
+    return_: dict[datetime, float],
+    heating_kwh: dict[datetime, float],
+    dhw_kwh: dict[datetime, float],
+) -> list[dict[str, float | str]]:
+    """Hourly (outdoor, supply, ΔT) points for hours of space heating."""
+    points: list[dict[str, float | str]] = []
+    for start in sorted(supply):
+        heat = heating_kwh.get(start, 0.0)
+        if (
+            heat < MIN_HEATING_KWH_PER_HOUR
+            or dhw_kwh.get(start, 0.0) > MAX_DHW_KWH_PER_HOUR
+        ):
+            continue
+        if start not in outdoor or start not in return_:
+            continue
+        points.append(
+            {
+                "time": start.isoformat(),
+                "outdoor_c": round(outdoor[start], 2),
+                "supply_c": round(supply[start], 2),
+                "delta_t_k": round(supply[start] - return_[start], 2),
+                "heating_kwh": round(heat, 3),
+            }
+        )
+    return points
+
+
+async def async_supply_curve(
+    hass: HomeAssistant,
+    entities: dict[WeheatKey, str],
+    outdoor_entity_id: str | None,
+    days: int,
+) -> list[dict[str, float | str]]:
+    """Fetch hourly statistics and return the heating-curve scatter points."""
+    end = dt_util.now()
+    start = local_midnight(end.date() - timedelta(days=days))
+    temps = await async_series(
+        hass,
+        {
+            "outdoor": outdoor_entity_id or "",
+            "supply": entities.get(WeheatKey.SUPPLY_TEMPERATURE, ""),
+            "return": entities.get(WeheatKey.RETURN_TEMPERATURE, ""),
+        },
+        start,
+        end,
+        period="hour",
+        kind="mean",
+        units={"temperature": UnitOfTemperature.CELSIUS},
+    )
+    energy = await async_series(
+        hass,
+        {
+            "heating": entities.get(WeheatKey.ENERGY_OUTPUT_HEATING, ""),
+            "dhw": entities.get(WeheatKey.ENERGY_OUTPUT_DHW, ""),
+        },
+        start,
+        end,
+        period="hour",
+        kind="change",
+        units={"energy": UnitOfEnergy.KILO_WATT_HOUR},
+    )
+    return supply_curve_points(
+        temps["outdoor"],
+        temps["supply"],
+        temps["return"],
+        energy["heating"],
+        energy["dhw"],
+    )
+
+
+def heat_loss_payload(data: HouseData) -> dict:
+    """Daily points and the fit, for the heat-loss scatter chart."""
+    result = data.heat_loss
+    fit = result.fit
+    return {
+        "indoor_assumed": data.indoor_assumed,
+        "reason": result.reason,
+        "days_used": result.used,
+        "coefficient_w_per_k": result.coefficient_w_per_k,
+        "confidence_95_w_per_k": result.coefficient_ci95,
+        "fit": None
+        if fit is None
+        else {
+            "slope": fit.slope,
+            "intercept": fit.intercept,
+            "r_squared": fit.r_squared,
+        },
+        "points": [
+            {
+                "day": day.day.isoformat(),
+                "delta_k": round(day.delta_k, 2),
+                "heating_kwh": round(day.heating_kwh, 2),
+                "excluded": day.excluded,
+            }
+            for day in result.days
+            if day.delta_k is not None and day.heating_kwh is not None
+        ],
+    }
+
+
 class HouseCoordinator(DataUpdateCoordinator[HouseData]):
     """Recompute the house analysis every hour."""
 

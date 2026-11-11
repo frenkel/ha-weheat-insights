@@ -2,6 +2,7 @@
 
 from datetime import date, datetime, timedelta
 import math
+from unittest.mock import MagicMock
 
 from homeassistant.components.recorder.models import StatisticMeanType
 from homeassistant.components.recorder.statistics import async_import_statistics
@@ -20,8 +21,15 @@ from custom_components.weheat_insights.const import (
     CONF_OUTDOOR_ENTITY,
     DOMAIN,
 )
-from custom_components.weheat_insights.house import build_day_points
+from custom_components.weheat_insights.house import (
+    build_day_points,
+    supply_curve_points,
+)
 from custom_components.weheat_insights.statistics import on_days
+from custom_components.weheat_insights.websocket_api import (
+    ws_heat_loss,
+    ws_supply_curve,
+)
 
 from .conftest import PUMP_UUID, WEHEAT_SENSORS, add_weheat_pump
 
@@ -152,3 +160,65 @@ def test_build_day_points_with_assumed_indoor() -> None:
     [point] = build_day_points([day], {day: 30.0}, 20.0, {day: 5.0}, {day})
     assert point.indoor_c == 20.0
     assert point.other_heat_source is True
+
+
+def test_supply_curve_points_keep_only_space_heating_hours() -> None:
+    t = [datetime(2026, 11, 1, h, tzinfo=dt_util.UTC) for h in range(4)]
+    points = supply_curve_points(
+        outdoor={t[0]: 5.0, t[1]: 4.0, t[2]: 3.0, t[3]: 2.0},
+        supply={t[0]: 32.0, t[1]: 50.0, t[2]: 22.0, t[3]: 34.0},
+        return_={t[0]: 28.0, t[1]: 45.0, t[2]: 21.0},
+        heating_kwh={t[0]: 1.5, t[1]: 1.0, t[2]: 0.1, t[3]: 1.2},
+        dhw_kwh={t[1]: 1.8},
+    )
+    # t1 was hot water, t2 mostly idle, t3 has no return temperature.
+    assert points == [
+        {
+            "time": t[0].isoformat(),
+            "outdoor_c": 5.0,
+            "supply_c": 32.0,
+            "delta_t_k": 4.0,
+            "heating_kwh": 1.5,
+        }
+    ]
+
+
+async def test_websocket_heat_loss_and_supply_curve(
+    hass: HomeAssistant, insights_entry: MockConfigEntry
+) -> None:
+    await hass.config_entries.async_setup(insights_entry.entry_id)
+    await hass.async_block_till_done()
+
+    connection = MagicMock()
+    ws_heat_loss(
+        hass,
+        connection,
+        {
+            "id": 1,
+            "type": "weheat_insights/heat_loss",
+            "entry_id": insights_entry.entry_id,
+        },
+    )
+    _, result = connection.send_result.call_args.args
+    assert result["fit"] is None
+    assert result["reason"] == "too_few_days"
+    assert result["indoor_assumed"] is True
+
+    connection = MagicMock()
+    ws_supply_curve(
+        hass,
+        connection,
+        {
+            "id": 2,
+            "type": "weheat_insights/supply_curve",
+            "entry_id": insights_entry.entry_id,
+            "days": 30,
+        },
+    )
+    await hass.async_block_till_done(wait_background_tasks=True)
+    _, result = connection.send_result.call_args.args
+    assert result == {"days": 30, "points": []}
+
+    connection = MagicMock()
+    ws_heat_loss(hass, connection, {"id": 3, "type": "x", "entry_id": "nope"})
+    connection.send_error.assert_called_once()

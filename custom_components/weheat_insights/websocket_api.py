@@ -15,6 +15,7 @@ from .const import DOMAIN
 from .degree_day_statistics import statistic_id as degree_day_statistic_id
 from .discovery import WeheatKey
 from .history import MAX_COUNT, async_history
+from .house import async_supply_curve, heat_loss_payload
 
 
 @callback
@@ -22,6 +23,19 @@ def async_register(hass: HomeAssistant) -> None:
     """Register the WebSocket commands."""
     websocket_api.async_register_command(hass, ws_dashboard_config)
     websocket_api.async_register_command(hass, ws_performance_history)
+    websocket_api.async_register_command(hass, ws_heat_loss)
+    websocket_api.async_register_command(hass, ws_supply_curve)
+
+
+def _loaded_entry(hass: HomeAssistant, entry_id: str):
+    entry = hass.config_entries.async_get_entry(entry_id)
+    if (
+        entry is None
+        or entry.domain != DOMAIN
+        or entry.state is not ConfigEntryState.LOADED
+    ):
+        return None
+    return entry
 
 
 @websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/dashboard_config"})
@@ -107,3 +121,45 @@ async def ws_performance_history(
             "periods": periods,
         },
     )
+
+
+@websocket_api.websocket_command(
+    {vol.Required("type"): f"{DOMAIN}/heat_loss", vol.Required("entry_id"): str}
+)
+@callback
+def ws_heat_loss(
+    hass: HomeAssistant,
+    connection: websocket_api.ActiveConnection,
+    msg: dict[str, Any],
+) -> None:
+    """Return the daily heat-loss points and the fitted line."""
+    entry = _loaded_entry(hass, msg["entry_id"])
+    if entry is None or entry.runtime_data.house is None:
+        connection.send_error(msg["id"], "not_found", "Heat pump not set up")
+        return
+    connection.send_result(msg["id"], heat_loss_payload(entry.runtime_data.house.data))
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): f"{DOMAIN}/supply_curve",
+        vol.Required("entry_id"): str,
+        vol.Optional("days", default=60): vol.All(int, vol.Range(min=1, max=365)),
+    }
+)
+@websocket_api.async_response
+async def ws_supply_curve(
+    hass: HomeAssistant,
+    connection: websocket_api.ActiveConnection,
+    msg: dict[str, Any],
+) -> None:
+    """Return hourly supply temperature against outdoor temperature."""
+    entry = _loaded_entry(hass, msg["entry_id"])
+    if entry is None:
+        connection.send_error(msg["id"], "not_found", "Heat pump not set up")
+        return
+    data = entry.runtime_data
+    points = await async_supply_curve(
+        hass, data.entities, data.outdoor_entity_id, msg["days"]
+    )
+    connection.send_result(msg["id"], {"days": msg["days"], "points": points})
