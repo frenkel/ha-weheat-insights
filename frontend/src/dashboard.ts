@@ -8,6 +8,7 @@
  */
 import type { Localize } from "./localize";
 import { PERFORMANCE_CARD_TAG } from "./performance-card";
+import { SCATTER_CARD_TAG } from "./scatter-card";
 import type {
   HeatPumpConfig,
   LovelaceCardConfig,
@@ -244,6 +245,25 @@ export function performanceView(pump: HeatPumpConfig, t: Localize, index: number
     2,
   );
 
+  const house = section([
+    heading(t("house"), "mdi:home-thermometer"),
+    tile(i.heat_loss_coefficient, t("heat_loss_coefficient")),
+    tile(i.heat_loss_design_load, t("heat_loss_design")),
+    tile(i.balance_point, t("balance_point")),
+    tile(i.cool_down_time_constant, t("cool_down_tau")),
+    tile(i.cool_down_rate, t("cool_down_rate")),
+    tile(i.thermal_mass, t("thermal_mass")),
+    { type: "markdown", content: t("house_definitions") },
+  ]);
+  const houseCharts = section(
+    [
+      { type: `custom:${SCATTER_CARD_TAG}`, entry_id: pump.entry_id, mode: "heat_loss" },
+      { type: `custom:${SCATTER_CARD_TAG}`, entry_id: pump.entry_id, mode: "supply_curve", days: 60 },
+    ],
+    2,
+    true,
+  );
+
   const about = section([heading(t("title"), "mdi:information-outline"), { type: "markdown", content: `${t("definitions")}\n\n_${t("disclaimer")}_` }]);
 
   return {
@@ -252,7 +272,7 @@ export function performanceView(pump: HeatPumpConfig, t: Localize, index: number
     icon: "mdi:chart-bar",
     type: "sections",
     max_columns: 4,
-    sections: present([headline, history, weather, energy, about]),
+    sections: present([headline, history, house, houseCharts, weather, energy, about]),
   };
 }
 

@@ -11,14 +11,17 @@ Assistant: no external server, no accounts, no telemetry.
 
 ## Features
 
-**Available now (0.2)**
+**Available now (0.4)**
 
 - A dashboard that builds itself, with no YAML. For each heat pump:
   - **Performance** (default tab): COP and SCOP per day, month and heating
     season, for the heat pump (as in the Weheat app) and in total (incl.
     standby and pumps), split into space heating and hot water; COP over time per day, month or
     season; what defrosting costs; degree days and heating per degree day
-    compared with last season; energy per day.
+    compared with last season; energy per day; **house analysis**: heat-loss
+    coefficient with confidence interval, heat loss at −10 °C, balance point,
+    cool-down rate and thermal mass, with scatter charts of daily heat loss
+    and of supply temperature against outdoor temperature.
   - **Live**: operating state, COP gauge (while running), room, outdoor,
     supply and return temperatures, ΔT, electrical power and heat output,
     history for the last 24 hours and hourly statistics for the last 7 days.
@@ -31,8 +34,8 @@ Assistant: no external server, no accounts, no telemetry.
 
 **Planned**
 
-- Heat-loss coefficient of the house and cool-down rate.
 - Heating-curve advice based on your own data.
+- Importing history from before the core Weheat integration was installed.
 
 ## Screenshots
 
@@ -121,6 +124,29 @@ separate frontend install.
   period, so a quiet day doesn't show a meaningless value.
 - Figures can lag up to about an hour: the core counters update every 30
   minutes and statistics are compiled hourly.
+
+### House analysis
+
+- **Heat-loss coefficient H (W/K)**: a straight line through one point per
+  day, heating heat (kWh/day) against the average indoor − outdoor
+  difference, over the last 12 months. H = slope × 1000 / 24. The line's
+  offset is the free heat from sun, people and appliances.
+- Days are left out when data is missing, the difference is below 3 K, the
+  indoor temperature changed more than 1.5 K from the day before (the house
+  was storing or releasing heat), or a gas boiler or electric heater ran
+  (only detectable within the recorder's state history, 10 days by default).
+- A result is shown once there are 14 usable days spanning at least 6 K,
+  with a 95 % confidence interval and R². Without an indoor sensor 20 °C is
+  assumed and flagged.
+- **Heat loss at −10 °C** = H × (20 − (−10)). **Balance point**: the outdoor
+  temperature at which the line reaches zero.
+- **Cool-down**: periods of at least 4 hours without heating (hourly
+  statistics) are fitted to an exponential decay. The median time constant
+  τ gives the cool-down rate at 15 K difference and, with H, the thermal
+  mass C = τ × H. A modulating heat pump that runs all night leaves few such
+  periods, so this can take a while to appear.
+- The heating-curve chart only uses hours in which the pump mainly heated
+  the house (at least 0.5 kWh space heating, no hot water).
 
 COP/SCOP sensors have no `state_class` on purpose: Home Assistant would store
 hourly averages of a running ratio, which mean nothing. Use the performance
