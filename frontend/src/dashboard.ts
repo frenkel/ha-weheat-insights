@@ -368,7 +368,7 @@ export function curveView(pump: HeatPumpConfig, t: Localize, index: number): Lov
     2,
   );
   const chart = section(
-    [{ type: `custom:${SCATTER_CARD_TAG}`, entry_id: pump.entry_id, mode: "supply_curve", days: 60 }],
+    [{ type: `custom:${SCATTER_CARD_TAG}`, entry_id: pump.entry_id, mode: "supply_curve", days: 365 }],
     2,
     true,
   );

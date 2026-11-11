@@ -1,6 +1,6 @@
 [project]
 name = "ha-weheat-insights"
-version = "0.6.7"
+version = "0.6.8"
 description = "Unofficial Home Assistant integration with insights for Weheat heat pumps"
 requires-python = ">=3.14"
 license = "MIT"
@@ -8,6 +8,9 @@ license = "MIT"
 [tool.ruff]
 target-version = "py314"
 line-length = 88
+# Personal one-off tools live in scripts/ (not part of the integration) and
+# must keep running on older Python versions; leave them out of lint/format.
+extend-exclude = ["scripts"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF", "D", "PL", "ASYNC"]

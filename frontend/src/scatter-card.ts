@@ -160,7 +160,7 @@ export class WeheatInsightsScatterCard extends LitElement {
           : await this.hass.callWS<SupplyCurveResponse>({
               type: "weheat_insights/supply_curve",
               entry_id,
-              days: days ?? 60,
+              days: days ?? 365,
             });
       this._error = undefined;
     } catch (err) {

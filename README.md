@@ -133,7 +133,7 @@ mode: heat_loss
 type: custom:weheat-insights-scatter-card
 entry_id: <entry_id>
 mode: supply_curve
-days: 60
+days: 365
 
 # Time per operating state and number and length of periods
 # (the operating sensors of the "Weheat Insights" device)
@@ -211,7 +211,7 @@ For each point of the Weheat curve:
 2. **The water temperature at which your heating system delivers exactly
    that heat.** The emitter law Q = k × (mean water − room)ⁿ is calibrated on
    hours of steady heating (heating in the hour and both neighbours, no hot
-   water nearby) over the last 60 days, with n = 1.3 for radiators, 1.1 for
+   water nearby) over the last 12 months, with n = 1.3 for radiators, 1.1 for
    underfloor heating and 1.2 for a mix (a setting). Half the measured
    supply−return difference at that heat is added.
 3. Above the balance point no heat is needed; the advice there is the room
@@ -225,7 +225,8 @@ extrapolated. The current curve is read from the Weheat water setpoint
 against the heat pump's own outdoor sensor over the last 14 days, so points
 it has not seen show "–".
 
-The heating-curve chart only uses hours in which the pump mainly heated the
+The heating-curve chart shows the last 12 months (the same hours the advice
+is calibrated on) and only uses hours in which the pump mainly heated the
 house (at least 0.5 kWh space heating, no hot water), and skips the hour after
 hot water, when left-over DHW heat can be pushed into the heating circuit at a
 high supply temperature.

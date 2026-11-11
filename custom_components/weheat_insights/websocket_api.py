@@ -144,7 +144,7 @@ def ws_heat_loss(
     {
         vol.Required("type"): f"{DOMAIN}/supply_curve",
         vol.Required("entry_id"): str,
-        vol.Optional("days", default=60): vol.All(int, vol.Range(min=1, max=365)),
+        vol.Optional("days", default=365): vol.All(int, vol.Range(min=1, max=365)),
     }
 )
 @websocket_api.async_response

@@ -75,7 +75,11 @@ class CurveAdvice:
     emitter_type: str = "mixed"
 
 
-CURVE_WINDOW_DAYS = 60
+# Steady heating hours from the whole last year calibrate the heating system:
+# how much heat it gives at a water temperature does not depend on the heating
+# curve setting, and cold days make the advice at low outdoor temperatures
+# better. The current curve uses only recent days, since it shows the setting.
+CURVE_WINDOW_DAYS = 365
 CURRENT_CURVE_DAYS = 14
 CURRENT_CURVE_TOLERANCE_K = 1.0
 MIN_CURRENT_HOURS = 3
