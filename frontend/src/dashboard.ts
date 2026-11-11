@@ -392,7 +392,9 @@ export function curveView(pump: HeatPumpConfig, t: Localize, index: number): Lov
   const i = pump.insights;
   const table = curveTable(pump, t);
   const advice = section(
-    [heading(t("curve_advice"), "mdi:chart-bell-curve-cumulative"), table ? { type: "markdown", content: table } : null],
+    [heading(t("curve_advice"), "mdi:chart-bell-curve-cumulative"),
+      table ? { type: "markdown", content: table, grid_options: { columns: "full" } } : null,
+    ],
     2,
   );
   const chart = section(
@@ -429,7 +431,9 @@ export function operationView(pump: HeatPumpConfig, t: Localize, index: number):
     present(groups.map((g) => entity(i[`${g}${suffix}`], label(g))));
 
   const summary = section(
-    [heading(t("operation"), "mdi:state-machine"), tables ? { type: "markdown", content: tables } : null],
+    [heading(t("operation"), "mdi:state-machine"),
+      tables ? { type: "markdown", content: tables, grid_options: { columns: "full" } } : null,
+    ],
     2,
   );
   const perDay = section(
