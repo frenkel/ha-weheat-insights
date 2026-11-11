@@ -23,6 +23,8 @@ from custom_components.weheat_insights.const import (
 )
 from custom_components.weheat_insights.house import (
     build_day_points,
+    current_curve,
+    steady_hours,
     supply_curve_points,
 )
 from custom_components.weheat_insights.statistics import on_days
@@ -223,3 +225,30 @@ async def test_websocket_heat_loss_and_supply_curve(
     connection = MagicMock()
     ws_heat_loss(hass, connection, {"id": 3, "type": "x", "entry_id": "nope"})
     connection.send_error.assert_called_once()
+
+
+def test_steady_hours_need_heating_neighbours_and_no_dhw() -> None:
+    t = [datetime(2026, 11, 1, h, tzinfo=dt_util.UTC) for h in range(6)]
+    supply = dict.fromkeys(t, 30.0)
+    return_ = dict.fromkeys(t, 27.0)
+    heating = {t[0]: 1.0, t[1]: 1.0, t[2]: 1.0, t[3]: 1.0, t[4]: 0.1, t[5]: 1.0}
+    dhw = {t[0]: 1.0}
+    hours = steady_hours(supply, return_, 20.0, heating, dhw)
+    # t1: neighbour t0 had hot water; t3: neighbour t4 barely heated;
+    # t0/t5: edge hours lack a heating neighbour.
+    assert [start for start, _ in hours] == [t[2]]
+    assert hours[0][1].room_c == 20.0
+
+
+def test_current_curve_from_setpoint() -> None:
+    base = datetime(2026, 11, 1, tzinfo=dt_util.UTC)
+    outdoor, setpoint = {}, {}
+    for h, (out, sp) in enumerate(
+        [(8.5, 27.0), (9.2, 27.0), (9.8, 26.6), (15.0, 23.0), (14.6, 23.2)]
+    ):
+        outdoor[base + timedelta(hours=h)] = out
+        setpoint[base + timedelta(hours=h)] = sp
+    curve = current_curve(outdoor, setpoint)
+    assert curve[9.0] == pytest.approx(27.0)
+    assert curve[15.0] is None  # only two hours near 15 °C
+    assert curve[-20.0] is None

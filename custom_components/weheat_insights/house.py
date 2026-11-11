@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
+from statistics import median
 from typing import TYPE_CHECKING
 
 from homeassistant.const import UnitOfEnergy, UnitOfTemperature
@@ -15,9 +16,21 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt as dt_util
 
+from .calculations.before_after import Comparison, compare
 from .calculations.cool_down import CoolDownResult, HourPoint, cool_down
+from .calculations.degree_days import degree_days_by_day
 from .calculations.heat_loss import DayPoint, HeatLossResult, heat_loss
+from .calculations.heating_curve import (
+    EMITTER_EXPONENTS,
+    WEHEAT_CURVE_POINTS,
+    CurvePoint,
+    EmitterModel,
+    SteadyHour,
+    advise,
+    calibrate_emitters,
+)
 from .const import DOMAIN, LOGGER
+from .coordinator import Settings
 from .discovery import WeheatKey
 from .statistics import (
     async_daily_means,
@@ -45,6 +58,74 @@ class HouseData:
     has_other_heat_source: bool
     period_start: date
     period_end: date  # exclusive
+    curve: CurveAdvice | None = None
+    comparison: Comparison | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class CurveAdvice:
+    """Heating-curve advice and what it is based on."""
+
+    points: list[CurvePoint]  # empty when there is not enough data
+    current: dict[float, float | None]  # curve point -> current setpoint
+    emitters: EmitterModel | None
+    target_c: float
+    measured_indoor_c: float | None
+    reason: str | None  # why there is no advice
+
+
+CURVE_WINDOW_DAYS = 60
+CURRENT_CURVE_DAYS = 14
+CURRENT_CURVE_TOLERANCE_K = 1.0
+MIN_CURRENT_HOURS = 3
+
+
+def steady_hours(
+    supply: dict[datetime, float],
+    return_: dict[datetime, float],
+    room: dict[datetime, float] | float,
+    heating_kwh: dict[datetime, float],
+    dhw_kwh: dict[datetime, float],
+) -> list[tuple[datetime, SteadyHour]]:
+    """Hours of steady space heating: heating this hour and both neighbours.
+
+    Hours next to hot water are left out (left-over DHW heat, cold return).
+    """
+    hour = timedelta(hours=1)
+    result = []
+    for start in sorted(supply):
+        window = (start - hour, start, start + hour)
+        if any(heating_kwh.get(t, 0.0) < MIN_HEATING_KWH_PER_HOUR for t in window):
+            continue
+        if any(dhw_kwh.get(t, 0.0) > MAX_DHW_KWH_PER_HOUR for t in window):
+            continue
+        room_c = room if isinstance(room, float) else room.get(start)
+        if start not in return_ or room_c is None:
+            continue
+        result.append(
+            (
+                start,
+                SteadyHour(heating_kwh[start], supply[start], return_[start], room_c),
+            )
+        )
+    return result
+
+
+def current_curve(
+    outdoor: dict[datetime, float],
+    setpoint: dict[datetime, float],
+    points: tuple[float, ...] = WEHEAT_CURVE_POINTS,
+) -> dict[float, float | None]:
+    """Median water setpoint near each curve point, None where not observed."""
+    result: dict[float, float | None] = {}
+    for point in points:
+        values = [
+            setpoint[t]
+            for t, out in outdoor.items()
+            if t in setpoint and abs(out - point) <= CURRENT_CURVE_TOLERANCE_K
+        ]
+        result[point] = median(values) if len(values) >= MIN_CURRENT_HOURS else None
+    return result
 
 
 def build_day_points(
@@ -242,32 +323,57 @@ class HouseCoordinator(DataUpdateCoordinator[HouseData]):
             build_day_points(days, heating, indoor, outdoor, other_heat_days)
         )
 
+        temps = await async_series(
+            self.hass,
+            {
+                "indoor": data.indoor_entity_id or "",
+                "outdoor": data.outdoor_entity_id or "",
+                "pump_outdoor": data.entities.get(WeheatKey.OUTSIDE_TEMPERATURE, ""),
+                "supply": data.entities.get(WeheatKey.SUPPLY_TEMPERATURE, ""),
+                "return": data.entities.get(WeheatKey.RETURN_TEMPERATURE, ""),
+                "setpoint": data.entities.get(WeheatKey.WATER_SETPOINT, ""),
+            },
+            start,
+            end,
+            period="hour",
+            kind="mean",
+            units={"temperature": UnitOfTemperature.CELSIUS},
+        )
+        heat = await async_series(
+            self.hass,
+            {
+                "heating": data.entities.get(WeheatKey.ENERGY_OUTPUT_HEATING, ""),
+                "dhw": data.entities.get(WeheatKey.ENERGY_OUTPUT_DHW, ""),
+            },
+            start,
+            end,
+            period="hour",
+            kind="change",
+            units={"energy": UnitOfEnergy.KILO_WATT_HOUR},
+        )
+
         cooling: CoolDownResult | None = None
         if not indoor_assumed:
-            series = await async_series(
-                self.hass,
-                {
-                    "indoor": data.indoor_entity_id or "",
-                    "outdoor": data.outdoor_entity_id or "",
-                },
-                start,
-                end,
-                period="hour",
-                kind="mean",
-                units={"temperature": UnitOfTemperature.CELSIUS},
-            )
-            heat = await async_series(
-                self.hass,
-                {"heating": data.entities.get(WeheatKey.ENERGY_OUTPUT_HEATING, "")},
-                start,
-                end,
-                period="hour",
-                kind="change",
-                units={"energy": UnitOfEnergy.KILO_WATT_HOUR},
-            )
             cooling = cool_down(
-                build_hour_points(series["indoor"], series["outdoor"], heat["heating"])
+                build_hour_points(temps["indoor"], temps["outdoor"], heat["heating"])
             )
+
+        settings = data.coordinator.settings if data.coordinator else Settings()
+        curve = self._curve_advice(
+            result,
+            temps=temps,
+            heat=heat,
+            settings=settings,
+            indoor=indoor,
+            today=today,
+        )
+
+        comparison = None
+        if settings.curve_changed_on is not None:
+            degree_days = degree_days_by_day(
+                outdoor, settings.degree_day_base, settings.weighted_degree_days
+            )
+            comparison = compare(settings.curve_changed_on, today, energy, degree_days)
 
         return HouseData(
             heat_loss=result,
@@ -276,4 +382,75 @@ class HouseCoordinator(DataUpdateCoordinator[HouseData]):
             has_other_heat_source=any(heat_sources),
             period_start=first,
             period_end=today,
+            curve=curve,
+            comparison=comparison,
+        )
+
+    def _curve_advice(
+        self,
+        result: HeatLossResult,
+        *,
+        temps: dict[str, dict[datetime, float]],
+        heat: dict[str, dict[datetime, float]],
+        settings: Settings,
+        indoor: dict[date, float] | float,
+        today: date,
+    ) -> CurveAdvice:
+        """Calibrate the heating system and advise a heating curve."""
+        since = local_midnight(today - timedelta(days=CURVE_WINDOW_DAYS))
+        recent = local_midnight(today - timedelta(days=CURRENT_CURVE_DAYS))
+        room = settings.target_room_c if isinstance(indoor, float) else temps["indoor"]
+        hours = [
+            (t, h)
+            for t, h in steady_hours(
+                temps["supply"], temps["return"], room, heat["heating"], heat["dhw"]
+            )
+            if t >= since
+        ]
+        emitters = calibrate_emitters(
+            [h for _, h in hours],
+            EMITTER_EXPONENTS.get(settings.emitter_type, EMITTER_EXPONENTS["mixed"]),
+        )
+        current = current_curve(
+            {t: v for t, v in temps["pump_outdoor"].items() if t >= recent},
+            temps["setpoint"],
+        )
+        # Average indoor temperature over the last two weeks, to compare
+        # with the target the advice aims for.
+        last_days = (
+            []
+            if isinstance(indoor, float)
+            else [
+                v
+                for d, v in indoor.items()
+                if d >= today - timedelta(days=CURRENT_CURVE_DAYS)
+            ]
+        )
+        measured = sum(last_days) / len(last_days) if last_days else None
+        fit = result.fit
+        reason = None
+        if fit is None:
+            reason = "no_heat_loss"
+        elif emitters is None:
+            reason = "too_few_steady_hours"
+        if reason is not None or fit is None or emitters is None:
+            return CurveAdvice(
+                [], current, emitters, settings.target_room_c, measured, reason
+            )
+        outdoor_steady = [
+            temps["pump_outdoor"][t] for t, _ in hours if t in temps["pump_outdoor"]
+        ]
+        observed = (
+            (min(outdoor_steady), max(outdoor_steady)) if outdoor_steady else (0.0, 0.0)
+        )
+        points = advise(
+            slope=fit.slope,
+            slope_ci=fit.slope_ci95,
+            intercept=fit.intercept,
+            emitters=emitters,
+            target_c=settings.target_room_c,
+            observed_outdoor=observed,
+        )
+        return CurveAdvice(
+            points, current, emitters, settings.target_room_c, measured, None
         )
