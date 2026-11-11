@@ -36,7 +36,10 @@
           "season_start_month": "Heating season starts in",
           "season_end_month": "Heating season ends after",
           "degree_day_base": "Degree-day base temperature",
-          "weighted_degree_days": "Weighted degree days"
+          "weighted_degree_days": "Weighted degree days",
+          "target_room_temperature": "Target room temperature",
+          "emitter_type": "Heating system",
+          "curve_changed_on": "Heating curve changed on"
         },
         "data_description": {
           "outdoor_entity": "Used for degree days and heat-loss analysis.",
@@ -44,7 +47,10 @@
           "season_start_month": "SCOP and heating per degree day are computed per heating season.",
           "season_end_month": "The season includes this whole month.",
           "degree_day_base": "Days with a mean outdoor temperature below this count as heating days. 18 °C is common in the Netherlands.",
-          "weighted_degree_days": "Count November–February ×1.1, March and October ×1.0 and April–September ×0.8 (Dutch convention)."
+          "weighted_degree_days": "Count November–February ×1.1, March and October ×1.0 and April–September ×0.8 (Dutch convention).",
+          "target_room_temperature": "The room temperature the heating-curve advice aims for.",
+          "emitter_type": "How heat is delivered; affects how much a lower water temperature reduces heat output.",
+          "curve_changed_on": "Optional. Compares heating electricity per degree day before and after this date."
         }
       }
     }
@@ -151,6 +157,13 @@
         "10": "October",
         "11": "November",
         "12": "December"
+      }
+    },
+    "emitter_type": {
+      "options": {
+        "radiators": "Radiators",
+        "underfloor": "Underfloor heating",
+        "mixed": "Radiators and underfloor heating"
       }
     }
   }

@@ -1,5 +1,7 @@
 """Tests for the config and options flow."""
 
+from datetime import date
+
 from homeassistant.config_entries import SOURCE_USER
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
@@ -125,6 +127,9 @@ async def test_options_flow(
             "season_end_month": "4",
             "degree_day_base": 15.5,
             "weighted_degree_days": True,
+            "target_room_temperature": 21.0,
+            "emitter_type": "radiators",
+            "curve_changed_on": "2026-11-01",
         },
     )
     assert result["type"] is FlowResultType.CREATE_ENTRY
@@ -138,3 +143,6 @@ async def test_options_flow(
     assert settings.season_end_month == 4
     assert settings.degree_day_base == 15.5
     assert settings.weighted_degree_days is True
+    assert settings.target_room_c == 21.0
+    assert settings.emitter_type == "radiators"
+    assert settings.curve_changed_on == date(2026, 11, 1)

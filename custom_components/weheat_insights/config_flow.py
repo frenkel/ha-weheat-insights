@@ -15,6 +15,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.selector import (
     BooleanSelector,
+    DateSelector,
     EntitySelector,
     EntitySelectorConfig,
     NumberSelector,
@@ -28,16 +29,21 @@ from homeassistant.helpers.selector import (
 import voluptuous as vol
 
 from .const import (
+    CONF_CURVE_CHANGED_ON,
     CONF_DEGREE_DAY_BASE,
+    CONF_EMITTER_TYPE,
     CONF_HEAT_PUMP_ID,
     CONF_INDOOR_ENTITY,
     CONF_OUTDOOR_ENTITY,
     CONF_SEASON_END_MONTH,
     CONF_SEASON_START_MONTH,
+    CONF_TARGET_ROOM_TEMPERATURE,
     CONF_WEIGHTED_DEGREE_DAYS,
     DEFAULT_DEGREE_DAY_BASE,
+    DEFAULT_EMITTER_TYPE,
     DEFAULT_SEASON_END_MONTH,
     DEFAULT_SEASON_START_MONTH,
+    DEFAULT_TARGET_ROOM_TEMPERATURE,
     DEFAULT_WEIGHTED_DEGREE_DAYS,
     DOMAIN,
 )
@@ -114,6 +120,20 @@ BASE_SELECTOR = NumberSelector(
 )
 
 
+TARGET_SELECTOR = NumberSelector(
+    NumberSelectorConfig(
+        min=15, max=25, step=0.5, unit_of_measurement="°C", mode=NumberSelectorMode.BOX
+    )
+)
+EMITTER_SELECTOR = SelectSelector(
+    SelectSelectorConfig(
+        options=["radiators", "underfloor", "mixed"],
+        mode=SelectSelectorMode.DROPDOWN,
+        translation_key="emitter_type",
+    )
+)
+
+
 def _calculation_schema(current: dict[str, Any]) -> dict:
     """Form fields for the season and degree-day settings."""
     return {
@@ -137,6 +157,20 @@ def _calculation_schema(current: dict[str, Any]) -> dict:
                 CONF_WEIGHTED_DEGREE_DAYS, DEFAULT_WEIGHTED_DEGREE_DAYS
             ),
         ): BooleanSelector(),
+        vol.Required(
+            CONF_TARGET_ROOM_TEMPERATURE,
+            default=current.get(
+                CONF_TARGET_ROOM_TEMPERATURE, DEFAULT_TARGET_ROOM_TEMPERATURE
+            ),
+        ): TARGET_SELECTOR,
+        vol.Required(
+            CONF_EMITTER_TYPE,
+            default=current.get(CONF_EMITTER_TYPE, DEFAULT_EMITTER_TYPE),
+        ): EMITTER_SELECTOR,
+        vol.Optional(
+            CONF_CURVE_CHANGED_ON,
+            description={"suggested_value": current.get(CONF_CURVE_CHANGED_ON)},
+        ): DateSelector(),
     }
 
 
@@ -147,6 +181,13 @@ def _calculation_options(user_input: dict[str, Any]) -> dict[str, Any]:
         CONF_SEASON_END_MONTH: int(user_input[CONF_SEASON_END_MONTH]),
         CONF_DEGREE_DAY_BASE: float(user_input[CONF_DEGREE_DAY_BASE]),
         CONF_WEIGHTED_DEGREE_DAYS: bool(user_input[CONF_WEIGHTED_DEGREE_DAYS]),
+        CONF_TARGET_ROOM_TEMPERATURE: float(user_input[CONF_TARGET_ROOM_TEMPERATURE]),
+        CONF_EMITTER_TYPE: user_input[CONF_EMITTER_TYPE],
+        **(
+            {CONF_CURVE_CHANGED_ON: user_input[CONF_CURVE_CHANGED_ON]}
+            if user_input.get(CONF_CURVE_CHANGED_ON)
+            else {}
+        ),
     }
 
 

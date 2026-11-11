@@ -22,13 +22,18 @@ from .calculations.periods import (
     sum_days,
 )
 from .const import (
+    CONF_CURVE_CHANGED_ON,
     CONF_DEGREE_DAY_BASE,
+    CONF_EMITTER_TYPE,
     CONF_SEASON_END_MONTH,
     CONF_SEASON_START_MONTH,
+    CONF_TARGET_ROOM_TEMPERATURE,
     CONF_WEIGHTED_DEGREE_DAYS,
     DEFAULT_DEGREE_DAY_BASE,
+    DEFAULT_EMITTER_TYPE,
     DEFAULT_SEASON_END_MONTH,
     DEFAULT_SEASON_START_MONTH,
+    DEFAULT_TARGET_ROOM_TEMPERATURE,
     DEFAULT_WEIGHTED_DEGREE_DAYS,
     DOMAIN,
     LOGGER,
@@ -52,6 +57,9 @@ class Settings:
     season_end_month: int = DEFAULT_SEASON_END_MONTH
     degree_day_base: float = DEFAULT_DEGREE_DAY_BASE
     weighted_degree_days: bool = DEFAULT_WEIGHTED_DEGREE_DAYS
+    target_room_c: float = DEFAULT_TARGET_ROOM_TEMPERATURE
+    emitter_type: str = DEFAULT_EMITTER_TYPE
+    curve_changed_on: date | None = None
 
     @classmethod
     def from_options(cls, options) -> Settings:
@@ -68,6 +76,17 @@ class Settings:
             ),
             weighted_degree_days=bool(
                 options.get(CONF_WEIGHTED_DEGREE_DAYS, DEFAULT_WEIGHTED_DEGREE_DAYS)
+            ),
+            target_room_c=float(
+                options.get(
+                    CONF_TARGET_ROOM_TEMPERATURE, DEFAULT_TARGET_ROOM_TEMPERATURE
+                )
+            ),
+            emitter_type=str(options.get(CONF_EMITTER_TYPE, DEFAULT_EMITTER_TYPE)),
+            curve_changed_on=(
+                date.fromisoformat(options[CONF_CURVE_CHANGED_ON])
+                if options.get(CONF_CURVE_CHANGED_ON)
+                else None
             ),
         )
 

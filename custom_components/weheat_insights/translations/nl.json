@@ -36,7 +36,10 @@
           "season_start_month": "Stookseizoen begint in",
           "season_end_month": "Stookseizoen eindigt na",
           "degree_day_base": "Basistemperatuur graaddagen",
-          "weighted_degree_days": "Gewogen graaddagen"
+          "weighted_degree_days": "Gewogen graaddagen",
+          "target_room_temperature": "Gewenste kamertemperatuur",
+          "emitter_type": "Afgiftesysteem",
+          "curve_changed_on": "Stooklijn aangepast op"
         },
         "data_description": {
           "outdoor_entity": "Gebruikt voor graaddagen en de warmteverliesanalyse.",
@@ -44,7 +47,10 @@
           "season_start_month": "De SCOP en verwarming per graaddag worden per stookseizoen berekend.",
           "season_end_month": "Deze maand hoort er helemaal bij.",
           "degree_day_base": "Dagen met een gemiddelde buitentemperatuur hieronder tellen als stookdag. In Nederland is 18 °C gebruikelijk.",
-          "weighted_degree_days": "Telt november–februari ×1,1, maart en oktober ×1,0 en april–september ×0,8 (Nederlandse conventie)."
+          "weighted_degree_days": "Telt november–februari ×1,1, maart en oktober ×1,0 en april–september ×0,8 (Nederlandse conventie).",
+          "target_room_temperature": "De kamertemperatuur waar het stooklijnadvies op mikt.",
+          "emitter_type": "Hoe de warmte wordt afgegeven; bepaalt hoeveel minder warmte een lagere watertemperatuur geeft.",
+          "curve_changed_on": "Optioneel. Vergelijkt het stroomverbruik voor verwarming per graaddag voor en na deze datum."
         }
       }
     }
@@ -151,6 +157,13 @@
         "10": "oktober",
         "11": "november",
         "12": "december"
+      }
+    },
+    "emitter_type": {
+      "options": {
+        "radiators": "Radiatoren",
+        "underfloor": "Vloerverwarming",
+        "mixed": "Radiatoren en vloerverwarming"
       }
     }
   }
