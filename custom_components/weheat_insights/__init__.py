@@ -31,6 +31,7 @@ from .discovery import (
 )
 from .frontend import async_register_frontend
 from .house import HouseCoordinator
+from .operating_tracker import OperatingTracker
 from .websocket_api import async_register as async_register_websocket
 
 PLATFORMS: list[Platform] = [Platform.SENSOR]
@@ -48,6 +49,7 @@ class WeheatInsightsData:
     indoor_entity_id: str | None
     coordinator: WeheatInsightsCoordinator | None = None
     house: HouseCoordinator | None = None
+    operating: OperatingTracker | None = None
 
 
 type WeheatInsightsConfigEntry = ConfigEntry[WeheatInsightsData]
@@ -88,6 +90,10 @@ async def async_setup_entry(
     house = HouseCoordinator(hass, entry)
     entry.runtime_data.house = house
     await house.async_config_entry_first_refresh()
+    if state_entity := entry.runtime_data.entities.get(WeheatKey.STATE):
+        tracker = OperatingTracker(hass, entry.entry_id, state_entity)
+        await tracker.async_start()
+        entry.runtime_data.operating = tracker
 
     entry.async_on_unload(_async_watch_weheat_entities(hass, entry, uuid))
 
@@ -99,7 +105,10 @@ async def async_unload_entry(
     hass: HomeAssistant, entry: WeheatInsightsConfigEntry
 ) -> bool:
     """Unload a config entry."""
-    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    unloaded = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    if unloaded and entry.runtime_data.operating is not None:
+        await entry.runtime_data.operating.async_stop()
+    return unloaded
 
 
 def _async_watch_weheat_entities(

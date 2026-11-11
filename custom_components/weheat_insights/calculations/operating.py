@@ -89,7 +89,7 @@ class GroupStats:
 def window_stats(
     periods: Sequence[Period], start: datetime, end: datetime
 ) -> dict[str, GroupStats]:
-    """Periods that ended within [start, end), per group.
+    """Periods that ended within [start, end], per group.
 
     The share is the time spent in each group, clipped to the window,
     relative to the window length.
@@ -97,7 +97,7 @@ def window_stats(
     window_hours = max((end - start).total_seconds() / 3600, 1e-9)
     result: dict[str, GroupStats] = {}
     for group in GROUPS:
-        ended = [p for p in periods if p.group == group and start <= p.end < end]
+        ended = [p for p in periods if p.group == group and start <= p.end <= end]
         lengths = [p.minutes for p in ended]
         clipped = sum(
             max(0.0, (min(p.end, end) - max(p.start, start)).total_seconds())
