@@ -1,0 +1,57 @@
+{
+  "entity": {
+    "sensor": {
+      "cop_today": {
+        "default": "mdi:heat-pump-outline"
+      },
+      "cop_heating_today": {
+        "default": "mdi:radiator"
+      },
+      "cop_dhw_today": {
+        "default": "mdi:water-boiler"
+      },
+      "cop_month": {
+        "default": "mdi:heat-pump-outline"
+      },
+      "cop_heating_month": {
+        "default": "mdi:radiator"
+      },
+      "cop_dhw_month": {
+        "default": "mdi:water-boiler"
+      },
+      "scop_season": {
+        "default": "mdi:heat-pump-outline"
+      },
+      "scop_heating_season": {
+        "default": "mdi:radiator"
+      },
+      "scop_dhw_season": {
+        "default": "mdi:water-boiler"
+      },
+      "defrost_cop_impact_season": {
+        "default": "mdi:snowflake-melt"
+      },
+      "defrost_heat_season": {
+        "default": "mdi:snowflake-melt"
+      },
+      "degree_days_month": {
+        "default": "mdi:thermometer-lines"
+      },
+      "degree_days_season": {
+        "default": "mdi:thermometer-lines"
+      },
+      "heat_per_degree_day_season": {
+        "default": "mdi:home-thermometer-outline"
+      },
+      "heat_per_degree_day_last_year": {
+        "default": "mdi:home-thermometer-outline"
+      },
+      "heat_per_degree_day_last_season": {
+        "default": "mdi:home-thermometer-outline"
+      },
+      "delta_t": {
+        "default": "mdi:thermometer-chevron-down"
+      }
+    }
+  }
+}

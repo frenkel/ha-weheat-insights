@@ -98,7 +98,9 @@ separate frontend install.
 
 - **Total COP/SCOP** = all useful heat ÷ all electricity, including standby
   and the indoor unit. This is the honest figure for the whole system and
-  can be lower than the Weheat app shows.
+  can be lower than the Weheat app shows. The total COP sensors list in
+  their attributes where the electricity went (heating, hot water, defrost,
+  standby, indoor unit).
 - **Heating** and **hot water COP** count only the compressor electricity for
   that mode, plus its share of defrost. The core Weheat integration reports
   defrost as one combined counter, so defrost electricity and the heat taken
@@ -106,8 +108,8 @@ separate frontend install.
   electricity. Standby and the indoor unit are left out of these two.
 - **COP lost to defrost** = COP without defrost − COP with defrost.
 - **Degree days** per day = max(0, base − mean outdoor temperature), base
-  18 °C by default. Optionally weighted (Dutch convention: Nov–Feb ×1.1,
-  Mar/Oct ×1.0, Apr–Sep ×0.8).
+  18 °C by default, weighted by default with the Dutch convention (Nov–Feb
+  ×1.1, Mar/Oct ×1.0, Apr–Sep ×0.8). Weighting can be switched off.
 - **Heating per degree day** uses space-heating heat only (hot water does not
   depend on the weather), so you can compare a mild and a cold winter.
 - The **heating season** runs from September up to and including May by

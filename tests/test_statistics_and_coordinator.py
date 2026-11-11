@@ -46,7 +46,7 @@ def test_compute_periods_and_last_year() -> None:
     energy = {d: DAY for d in _days(date(2025, 9, 1), today + timedelta(days=1))}
     means = {d: 8.0 for d in energy}  # 10 degree days per day at base 18
 
-    data = compute(today, Settings(), energy, means)
+    data = compute(today, Settings(weighted_degree_days=False), energy, means)
 
     assert data.today.start == today
     assert data.today.performance.totals == DAY
@@ -86,6 +86,12 @@ def test_compute_weighted_degree_days() -> None:
         {today: 5.5},
     )
     assert data.today.degree_days == pytest.approx(11.0)
+
+
+def test_weighted_degree_days_are_the_default() -> None:
+    today = date(2026, 11, 11)
+    data = compute(today, Settings(), {}, {today: 8.0})
+    assert data.today.degree_days == pytest.approx(11.0)  # (18 - 8) x 1.1
 
 
 def test_fetch_start_covers_previous_season() -> None:

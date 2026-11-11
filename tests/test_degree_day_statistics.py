@@ -22,6 +22,8 @@ from custom_components.weheat_insights.degree_day_statistics import (
     statistic_id,
 )
 
+PLAIN = Settings(weighted_degree_days=False)
+
 
 def test_statistic_id_is_valid() -> None:
     assert statistic_id("0B5C-11aa") == "weheat_insights:degree_days_0b5c_11aa"
@@ -67,7 +69,7 @@ async def test_backfill_then_extend(hass: HomeAssistant) -> None:
 
     stats = DegreeDayStatistics(hass, "pump-1", "Pump degree days")
     today = date(2026, 11, 4)
-    await stats.async_update(today, Settings(), "sensor.outdoor", {})
+    await stats.async_update(today, PLAIN, "sensor.outdoor", {})
     await async_wait_recording_done(hass)
 
     rows = await _read(hass, stats.statistic_id, first, date(2026, 11, 10))
@@ -77,7 +79,7 @@ async def test_backfill_then_extend(hass: HomeAssistant) -> None:
     # Next day: 4 Nov is complete now and gets appended, sums continue.
     await stats.async_update(
         date(2026, 11, 5),
-        Settings(),
+        PLAIN,
         "sensor.outdoor",
         {date(2026, 11, 3): 8.0, date(2026, 11, 4): 13.0},
     )
@@ -89,7 +91,7 @@ async def test_backfill_then_extend(hass: HomeAssistant) -> None:
 
 async def test_nothing_without_outdoor_sensor(hass: HomeAssistant) -> None:
     stats = DegreeDayStatistics(hass, "pump-1", "Pump degree days")
-    await stats.async_update(date(2026, 11, 4), Settings(), None, {})
+    await stats.async_update(date(2026, 11, 4), PLAIN, None, {})
     await async_wait_recording_done(hass)
     assert (
         await _read(hass, stats.statistic_id, date(2026, 1, 1), date(2027, 1, 1)) == []

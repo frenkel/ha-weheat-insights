@@ -89,7 +89,10 @@ async def test_period_sensors_from_statistics(hass: HomeAssistant, freezer) -> N
         domain=DOMAIN,
         unique_id=PUMP_UUID,
         data={CONF_HEAT_PUMP_ID: PUMP_UUID},
-        options={CONF_OUTDOOR_ENTITY: weheat.entity_ids["outside_temperature"]},
+        options={
+            CONF_OUTDOOR_ENTITY: weheat.entity_ids["outside_temperature"],
+            "weighted_degree_days": False,
+        },
     )
     entry.add_to_hass(hass)
     await hass.config_entries.async_setup(entry.entry_id)
@@ -101,6 +104,9 @@ async def test_period_sensors_from_statistics(hass: HomeAssistant, freezer) -> N
     assert float(scop.state) == pytest.approx(total_out / total_in, abs=0.01)
     assert "state_class" not in scop.attributes
     assert scop.attributes["electricity_kwh"] > 0
+    assert scop.attributes["electricity_standby_kwh"] == pytest.approx(0.03 * 48)
+    # Unitless COP states are rounded to the display precision.
+    assert len(scop.state.split(".")[1]) <= 2
 
     share = 0.4 / 0.5
     heating = hass.states.get(_entity_id(hass, "scop_heating_season"))
@@ -136,3 +142,9 @@ def test_every_sensor_has_a_translated_name(lang: str) -> None:
     ]["sensor"]
     keys = {d.translation_key for d in PERIOD_SENSORS} | {"delta_t"}
     assert keys <= names.keys()
+
+
+def test_every_sensor_has_an_icon() -> None:
+    icons = json.loads((COMPONENT / "icons.json").read_text())["entity"]["sensor"]
+    keys = {d.translation_key for d in PERIOD_SENSORS} | {"delta_t"}
+    assert keys <= icons.keys()

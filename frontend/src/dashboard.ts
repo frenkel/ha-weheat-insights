@@ -54,10 +54,14 @@ function statisticsGraph(title: string, entities: Entity[], days: number): Lovel
     : null;
 }
 
-function section(cards: (LovelaceCardConfig | null)[], columnSpan?: number): LovelaceSectionConfig | null {
+function section(
+  cards: (LovelaceCardConfig | null)[],
+  columnSpan?: number,
+  noHeading = false,
+): LovelaceSectionConfig | null {
   const real = present(cards);
   // A section with only its heading is noise.
-  if (real.length <= 1) return null;
+  if (real.length <= (noHeading ? 0 : 1)) return null;
   return { type: "grid", cards: real, ...(columnSpan ? { column_span: columnSpan } : {}) };
 }
 
@@ -182,30 +186,30 @@ export function performanceView(pump: HeatPumpConfig, t: Localize, index: number
   const i = pump.insights;
 
   const headline = section([
-    heading(t("performance"), "mdi:chart-bar"),
-    tile(i.scop_season, t("scop_season")),
-    tile(i.scop_heating_season, `${t("scop_season")} · ${t("heating")}`),
-    tile(i.scop_dhw_season, `${t("scop_season")} · ${t("dhw")}`),
-    tile(i.cop_month, t("cop_month")),
-    tile(i.cop_today, t("cop_today")),
-    tile(i.defrost_cop_impact_season, t("defrost_cop_impact")),
+    heading(t("scop_heading"), "mdi:chart-bar"),
+    tile(i.scop_season, t("total")),
+    tile(i.scop_heating_season, t("heating")),
+    tile(i.scop_dhw_season, t("dhw")),
+    heading(t("cop_heading"), "mdi:heat-pump-outline"),
+    tile(i.cop_month, t("this_month")),
+    tile(i.cop_today, t("today")),
+    tile(i.defrost_cop_impact_season, t("defrost_loss")),
   ]);
 
-  const history = section(
-    [heading(t("cop_history"), "mdi:chart-timeline-variant"), { type: `custom:${PERFORMANCE_CARD_TAG}`, entry_id: pump.entry_id }],
-    2,
-  );
+  // The card has its own title, so no heading above it.
+  const history = section([{ type: `custom:${PERFORMANCE_CARD_TAG}`, entry_id: pump.entry_id }], 2, true);
 
   const degreeDays = pump.degree_days_statistic_id
     ? { entity: pump.degree_days_statistic_id, name: t("degree_days") }
     : null;
   const weather = section([
-    heading(t("heat_per_degree_day"), "mdi:thermometer-lines"),
-    tile(i.heat_per_degree_day_season, t("heat_per_degree_day")),
-    tile(i.heat_per_degree_day_last_year, t("heat_per_degree_day_last_year")),
-    tile(i.heat_per_degree_day_last_season, t("heat_per_degree_day_last_season")),
-    tile(i.degree_days_month, t("degree_days_month")),
-    tile(i.degree_days_season, t("degree_days_season")),
+    heading(t("heat_per_degree_day"), "mdi:home-thermometer-outline"),
+    tile(i.heat_per_degree_day_season, t("this_season")),
+    tile(i.heat_per_degree_day_last_year, t("last_year_to_date")),
+    tile(i.heat_per_degree_day_last_season, t("whole_last_season")),
+    heading(t("degree_days"), "mdi:thermometer-lines"),
+    tile(i.degree_days_month, t("this_month")),
+    tile(i.degree_days_season, t("this_season")),
     degreeDays ? changeBars(t("degree_days_per_month"), [degreeDays], "month", 400) : null,
     degreeDays ? changeBars(t("degree_days_per_day"), [degreeDays], "day", 30) : null,
   ]);

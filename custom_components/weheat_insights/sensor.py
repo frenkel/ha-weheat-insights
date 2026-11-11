@@ -146,12 +146,25 @@ def _cop_attrs(mode: str | None) -> Callable[[PeriodResult], dict[str, Any]]:
             used, made = totals.total_in, totals.total_out
         else:
             used, made = totals.mode_energy(mode)
-        return {
+        attrs: dict[str, Any] = {
             "period_start": result.start.isoformat(),
             "period_end": result.end.isoformat(),
             "electricity_kwh": round(used, 2),
             "heat_kwh": round(made, 2),
         }
+        if mode is None:
+            # Where the electricity of the total COP goes.
+            attrs |= {
+                "electricity_heating_kwh": round(totals.in_heating, 2),
+                "electricity_dhw_kwh": round(totals.in_dhw, 2),
+                "electricity_defrost_kwh": round(totals.in_defrost, 2),
+                "electricity_standby_kwh": round(totals.in_standby, 2),
+                "electricity_indoor_unit_kwh": round(totals.in_indoor_unit, 2),
+                "heat_heating_kwh": round(totals.out_heating, 2),
+                "heat_dhw_kwh": round(totals.out_dhw, 2),
+                "heat_defrost_kwh": round(totals.out_defrost, 2),
+            }
+        return attrs
 
     return attrs
 
@@ -310,7 +323,13 @@ class PeriodSensor(
     @property
     def native_value(self) -> float | None:
         """Return the figure, rounded for storage."""
-        return _round(self.entity_description.value_fn(self._result))
+        # COP sensors have no unit, so the frontend shows the raw state
+        # without applying the display precision: round it here.
+        precision = self.entity_description.suggested_display_precision
+        return _round(
+            self.entity_description.value_fn(self._result),
+            3 if precision is None else precision,
+        )
 
     @property
     def extra_state_attributes(self) -> dict[str, Any] | None:

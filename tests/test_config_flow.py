@@ -113,6 +113,7 @@ async def test_options_flow(
 
     assert _schema_default(result, "season_start_month") == "9"
     assert _schema_default(result, "degree_day_base") == 18.0
+    assert _schema_default(result, "weighted_degree_days") is True
 
     room = weheat.entity_ids["thermostat_room_temperature"]
     result = await hass.config_entries.options.async_configure(
