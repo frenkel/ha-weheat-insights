@@ -12,21 +12,18 @@ from dataclasses import dataclass
 from datetime import datetime
 from statistics import mean
 
-GROUPS: tuple[str, ...] = ("heating", "dhw", "defrost", "standby", "other")
+GROUPS: tuple[str, ...] = ("heating", "dhw", "defrost", "standby", "legionella")
 
 # Core Weheat heat_pump_state options -> our group. States not listed here
-# (offline, unknown, unavailable) are gaps: they end a period and start none.
+# (water check, cooling, self test, manual control, updating, offline,
+# unknown, unavailable) are rare or not operation; they are gaps: they end a
+# period and start none.
 STATE_GROUPS: dict[str, str] = {
     "heating": "heating",
     "dhw": "dhw",
     "defrosting": "defrost",
     "standby": "standby",
-    "water_check": "other",
-    "legionella_prevention": "other",
-    "cooling": "other",
-    "self_test": "other",
-    "manual_control": "other",
-    "updating": "other",
+    "legionella_prevention": "legionella",
 }
 
 
@@ -54,8 +51,7 @@ def periods_from_states(
 ) -> tuple[list[Period], tuple[str, datetime] | None]:
     """Turn (time, state) changes into completed periods plus the open one.
 
-    Consecutive states in the same group (e.g. water check followed by
-    legionella prevention) form one period.
+    Repeated reports of the same state form one period.
     """
     periods: list[Period] = []
     current: tuple[str, datetime] | None = None

@@ -188,14 +188,14 @@
       "standby_time_total": {
         "name": "Standby time (total)"
       },
-      "operating_other": {
-        "name": "Other states periods today"
+      "operating_legionella": {
+        "name": "Legionella prevention periods today"
       },
-      "other_periods_total": {
-        "name": "Other states periods (total)"
+      "legionella_periods_total": {
+        "name": "Legionella prevention periods (total)"
       },
-      "other_time_total": {
-        "name": "Other states time (total)"
+      "legionella_time_total": {
+        "name": "Legionella prevention time (total)"
       }
     }
   },

@@ -29,6 +29,7 @@ from homeassistant.const import (
     UnitOfTime,
 )
 from homeassistant.core import Event, EventStateChangedData, HomeAssistant, callback
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.event import async_track_state_change_event
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -38,6 +39,7 @@ from . import WeheatInsightsConfigEntry
 from .calculations.heating_curve import WEHEAT_CURVE_POINTS
 from .calculations.operating import GROUPS
 from .calculations.temperature import delta_t
+from .const import DOMAIN
 from .coordinator import InsightsData, PeriodResult, WeheatInsightsCoordinator
 from .discovery import WeheatHeatPump, WeheatKey
 from .entity import WeheatInsightsEntity
@@ -80,6 +82,13 @@ async def async_setup_entry(
             HouseSensor(data.pump, data.house, description)
             for description in COMPARISON_SENSORS
         )
+    # Before 0.6.5 the fifth operating group was called "other".
+    registry = er.async_get(hass)
+    for key in ("operating_other", "other_periods_total", "other_time_total"):
+        if entity_id := registry.async_get_entity_id(
+            "sensor", DOMAIN, f"{data.pump.uuid}_{key}"
+        ):
+            registry.async_remove(entity_id)
     if data.operating is not None:
         for group in GROUPS:
             entities.append(OperatingSummarySensor(data.pump, data.operating, group))

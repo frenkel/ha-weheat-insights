@@ -315,7 +315,7 @@ function jinjaNum(expr: string, sep: string, digits = 1): string {
   return `{{ (('%.${digits}f' | format(${expr})) | replace('.', '${sep}')) if (${expr}) is not none else '–' }}`;
 }
 
-const OPERATING_GROUPS = ["heating", "dhw", "defrost", "standby", "other"] as const;
+const OPERATING_GROUPS = ["heating", "dhw", "defrost", "standby", "legionella"] as const;
 
 /** Two markdown tables (counts per window; length and share over 30 days). */
 export function operatingTables(pump: HeatPumpConfig, t: Localize): string | null {
@@ -323,7 +323,7 @@ export function operatingTables(pump: HeatPumpConfig, t: Localize): string | nul
   if (!groups.length) return null;
   const sep = t("decimal_separator");
   const label = (g: string) =>
-    noWrap(g === "other" ? t("op_other") : g === "standby" ? t("standby") : t(g as never));
+    noWrap(g === "standby" ? t("standby") : t(g as never));
   const attr = (g: string, name: string) => `state_attr('${pump.insights[`operating_${g}`]}', '${name}')`;
   return [
     `**${t("op_counts")}**`,
@@ -426,7 +426,7 @@ export function operationView(pump: HeatPumpConfig, t: Localize, index: number):
   const i = pump.insights;
   const w = pump.weheat;
   const tables = operatingTables(pump, t);
-  const label = (g: string) => (g === "other" ? t("op_other") : g === "standby" ? t("standby") : t(g as never));
+  const label = (g: string) => (g === "standby" ? t("standby") : t(g as never));
   const counters = (suffix: string, groups: readonly string[]) =>
     present(groups.map((g) => entity(i[`${g}${suffix}`], label(g))));
 

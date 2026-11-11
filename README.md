@@ -25,7 +25,7 @@ Assistant: no external server, no accounts, no telemetry.
     outdoor temperature with both curves; before/after comparison of a curve
     change, corrected for weather.
   - **Operation**: how often and how long the heat pump heats, makes hot
-    water, defrosts and stands by (today, 7 and 30 days: number of periods,
+    water, defrosts, runs legionella prevention and stands by (today, 7 and 30 days: number of periods,
     min/avg/max length, hours and share), with
     periods and hours per day as bar charts and defrosts next to degree days.
   - **Live**: operating state, COP gauge (while running), room, outdoor,
@@ -224,9 +224,10 @@ COP) for up to 60 days before and after.
 
 Weheat Insights follows the core integration's operating state and stores
 each completed period (kept for about 13 months). On first start it fills
-in from the recorder's state history (10 days by default). States are
-grouped into heating, hot water, defrost, standby and other (water check,
-legionella prevention and other rare states). Per state there is a summary
+in from the recorder's state history (10 days by default). Counted states
+are heating, hot water, defrost, standby and legionella prevention (the
+periodic heating of the hot-water tank to a high temperature). Rare states
+such as a water check, self test or firmware update are not counted. Per state there is a summary
 sensor (periods today; attributes with count, min/avg/max length, hours and
 share for today, 7 and 30 days) and two running totals with long-term
 statistics (number of periods and hours) for bar charts.

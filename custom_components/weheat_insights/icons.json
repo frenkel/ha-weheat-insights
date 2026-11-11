@@ -127,14 +127,14 @@
       "standby_time_total": {
         "default": "mdi:power-sleep"
       },
-      "operating_other": {
-        "default": "mdi:dots-horizontal-circle-outline"
+      "operating_legionella": {
+        "default": "mdi:bacteria-outline"
       },
-      "other_periods_total": {
-        "default": "mdi:dots-horizontal-circle-outline"
+      "legionella_periods_total": {
+        "default": "mdi:bacteria-outline"
       },
-      "other_time_total": {
-        "default": "mdi:dots-horizontal-circle-outline"
+      "legionella_time_total": {
+        "default": "mdi:bacteria-outline"
       }
     }
   }

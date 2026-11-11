@@ -188,14 +188,14 @@
       "standby_time_total": {
         "name": "Stand-by: tijd (totaal)"
       },
-      "operating_other": {
-        "name": "Overige toestanden: periodes vandaag"
+      "operating_legionella": {
+        "name": "Legionellapreventie: periodes vandaag"
       },
-      "other_periods_total": {
-        "name": "Overige toestanden: periodes (totaal)"
+      "legionella_periods_total": {
+        "name": "Legionellapreventie: periodes (totaal)"
       },
-      "other_time_total": {
-        "name": "Overige toestanden: tijd (totaal)"
+      "legionella_time_total": {
+        "name": "Legionellapreventie: tijd (totaal)"
       }
     }
   },

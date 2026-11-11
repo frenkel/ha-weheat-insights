@@ -20,7 +20,8 @@ def at(minutes: float) -> datetime:
 
 def test_group_mapping() -> None:
     assert group_of("defrosting") == "defrost"
-    assert group_of("legionella_prevention") == "other"
+    assert group_of("legionella_prevention") == "legionella"
+    assert group_of("water_check") is None  # rare: not counted
     assert group_of("offline") is None
     assert group_of("unavailable") is None
     assert group_of(None) is None
@@ -33,9 +34,9 @@ def test_periods_merge_same_group_and_stop_at_gaps() -> None:
         (at(32), "heating"),  # repeated state, same period
         (at(90), "defrosting"),
         (at(95), "heating"),
-        (at(150), "water_check"),
-        (at(152), "legionella_prevention"),  # same group "other"
-        (at(170), "unavailable"),  # gap ends the period
+        (at(150), "legionella_prevention"),
+        (at(152), "legionella_prevention"),  # repeated report, same period
+        (at(170), "water_check"),  # rare state: a gap that ends the period
         (at(180), "standby"),
     ]
     periods, open_period = periods_from_states(changes, until=at(200))
@@ -44,7 +45,7 @@ def test_periods_merge_same_group_and_stop_at_gaps() -> None:
         ("heating", 60),
         ("defrost", 5),
         ("heating", 55),
-        ("other", 20),
+        ("legionella", 20),
     ]
     assert open_period == ("standby", at(180))
 

@@ -32,7 +32,7 @@ COMPONENT = Path(__file__).parent.parent / "custom_components" / "weheat_insight
 
 OPERATING_KEYS = {
     key
-    for group in ("heating", "dhw", "defrost", "standby", "other")
+    for group in ("heating", "dhw", "defrost", "standby", "legionella")
     for key in (f"operating_{group}", f"{group}_periods_total", f"{group}_time_total")
 }
 

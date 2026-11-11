@@ -138,3 +138,22 @@ async def test_operating_sensors(
     assert time_total.attributes["unit_of_measurement"] == "h"
 
     await hass.config_entries.async_unload(insights_entry.entry_id)
+
+
+async def test_migrates_other_to_legionella(hass: HomeAssistant, hass_storage) -> None:
+    start = dt_util.parse_datetime("2026-11-01 10:00:00+00:00").timestamp()
+    hass_storage["weheat_insights.operating.entry3"] = {
+        "version": 1,
+        "minor_version": 1,
+        "key": "weheat_insights.operating.entry3",
+        "data": {
+            "periods": [["other", start, start + 3.5 * 3600]],
+            "totals": {"other": {"count": 2, "seconds": 7.4 * 3600}},
+            "open": None,
+        },
+    }
+    tracker = OperatingTracker(hass, "entry3", ENTITY)
+    await tracker.async_start()
+    assert [p.group for p in tracker.periods] == ["legionella"]
+    assert tracker.totals["legionella"]["count"] == 2
+    await tracker.async_stop()

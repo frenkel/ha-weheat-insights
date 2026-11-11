@@ -193,18 +193,24 @@ class OperatingTracker:
     def _load(self, data: dict[str, Any]) -> None:
         ts = dt_util.utc_from_timestamp
         self.periods = [
-            Period(group, ts(start), ts(end))
+            Period(_migrate(group), ts(start), ts(end))
             for group, start, end in data.get("periods", [])
-            if group in GROUPS
+            if _migrate(group) in GROUPS
         ]
-        for group, total in data.get("totals", {}).items():
+        for old_group, total in data.get("totals", {}).items():
+            group = _migrate(old_group)
             if group in self.totals:
                 self.totals[group] = {
                     "count": total.get("count", 0),
                     "seconds": total.get("seconds", 0.0),
                 }
-        if open_ := data.get("open"):
-            self.open = (open_[0], ts(open_[1]))
+        if (open_ := data.get("open")) and _migrate(open_[0]) in GROUPS:
+            self.open = (_migrate(open_[0]), ts(open_[1]))
+
+
+def _migrate(group: str) -> str:
+    """Map groups from older versions: "other" was legionella prevention."""
+    return "legionella" if group == "other" else group
 
 
 TrackerFactory = Callable[[HomeAssistant, str, str], OperatingTracker]
