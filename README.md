@@ -11,17 +11,21 @@ Assistant: no external server, no accounts, no telemetry.
 
 ## Features
 
-**Available now (0.4)**
+**Features**
 
-- A dashboard that builds itself, with no YAML. For each heat pump three tabs:
+- A dashboard that builds itself, with no YAML. For each heat pump four tabs:
   - **Performance** (default): COP and SCOP per day, month and heating
     season, for the heat pump (as in the Weheat app) and in total (incl.
     standby and pumps), split into space heating and hot water; COP over
     time per day, month or season; what defrosting costs; energy per day.
   - **House**: heat-loss coefficient with confidence interval and scatter
     chart, heat loss at −10 °C, balance point, cool-down rate and thermal
-    mass; degree days and heating per degree day compared with last season;
-    supply temperature against outdoor temperature (heating curve).
+    mass; degree days and heating per degree day compared with last season.
+  - **Heating curve**: advice for the five points of the Weheat heating
+    curve (−20, 9, 15, 20 and 25 °C outdoor) that just keeps your target room
+    temperature, next to your current curve; supply temperature against
+    outdoor temperature with both curves; before/after comparison of a curve
+    change, corrected for weather.
   - **Live**: operating state, COP gauge (while running), room, outdoor,
     supply and return temperatures, ΔT, electrical power and heat output,
     history for the last 24 hours and hourly statistics for the last 7 days.
@@ -31,11 +35,6 @@ Assistant: no external server, no accounts, no telemetry.
 - Works from day one with your existing history: everything is computed from
   Home Assistant's long-term statistics of the core Weheat energy counters.
 - Works with multiple heat pumps. English and Dutch.
-
-**Planned**
-
-- Heating-curve advice based on your own data.
-- Importing history from before the core Weheat integration was installed.
 
 ## Screenshots
 
@@ -150,12 +149,45 @@ separate frontend install.
   hour after hot water, when left-over DHW heat can be pushed into the
   heating circuit at a high supply temperature.
 
+### Heating-curve advice
+
+The aim is one heating curve that keeps the house at your target room
+temperature (default 20 °C, a setting) with water no warmer than needed:
+lower water temperatures give a higher COP.
+
+For each point of the Weheat curve:
+
+1. **Heat demand** at that outdoor temperature, from the heat-loss fit at the
+   target room temperature.
+2. **The water temperature at which your heating system delivers exactly
+   that heat.** The emitter law Q = k × (mean water − room)ⁿ is calibrated on
+   hours of steady heating (heating in the hour and both neighbours, no hot
+   water nearby) over the last 60 days, with n = 1.3 for radiators, 1.1 for
+   underfloor heating and 1.2 for a mix (a setting). Half the measured
+   supply−return difference at that heat is added.
+3. Above the balance point no heat is needed; the advice there is the room
+   temperature.
+
+The advice is given with one decimal (the Weheat web portal accepts that)
+and in whole degrees for the app, **rounded up** so the house stays warm.
+The range comes from the 95 % interval of the heat-loss coefficient. Points
+far outside the outdoor temperatures you have measured are marked as
+extrapolated. The current curve is read from the Weheat water setpoint
+against the heat pump's own outdoor sensor over the last 14 days, so points
+it has not seen show "–".
+
+Treat the advice as a starting point, not a guarantee: change the curve in
+small steps and check the rooms stay warm. Set the date of the change under
+**Configure** to compare heating electricity per degree day (and heating
+COP) for up to 60 days before and after.
+
 COP/SCOP sensors have no `state_class` on purpose: Home Assistant would store
 hourly averages of a running ratio, which mean nothing. Use the performance
 card for COP over time.
 
-You can change the outdoor and indoor sensor, the heating season and the
-degree-day settings under **Settings → Devices & services → Weheat Insights →
+You can change the outdoor and indoor sensor, the heating season, the
+degree-day settings, the target room temperature, the heating system and the
+date of a heating-curve change under **Settings → Devices & services → Weheat Insights →
 Configure**.
 
 ## How it works
