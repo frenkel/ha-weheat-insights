@@ -72,6 +72,7 @@ class CurveAdvice:
     target_c: float
     measured_indoor_c: float | None
     reason: str | None  # why there is no advice
+    emitter_type: str = "mixed"
 
 
 CURVE_WINDOW_DAYS = 60
@@ -455,7 +456,13 @@ class HouseCoordinator(DataUpdateCoordinator[HouseData]):
             reason = "too_few_steady_hours"
         if reason is not None or fit is None or emitters is None:
             return CurveAdvice(
-                [], current, emitters, settings.target_room_c, measured, reason
+                [],
+                current,
+                emitters,
+                settings.target_room_c,
+                measured,
+                reason,
+                settings.emitter_type,
             )
         # The demand model is fitted on daily data, so "measured range" means
         # the outdoor temperatures of the days the heat-loss fit used.
@@ -476,7 +483,13 @@ class HouseCoordinator(DataUpdateCoordinator[HouseData]):
             observed_outdoor=observed,
         )
         return CurveAdvice(
-            points, current, emitters, settings.target_room_c, measured, None
+            points,
+            current,
+            emitters,
+            settings.target_room_c,
+            measured,
+            None,
+            settings.emitter_type,
         )
 
 

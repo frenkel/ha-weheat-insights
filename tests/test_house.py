@@ -143,6 +143,7 @@ async def test_heat_loss_from_statistics(hass: HomeAssistant, freezer) -> None:
     assert float(advice.state) == pytest.approx(expected, abs=0.6)
     assert advice.attributes["current"] == pytest.approx(27.0, abs=0.3)
     assert advice.attributes["extrapolated"] is False
+    assert advice.attributes["emitter_type"] == "mixed"
     cold = hass.states.get(_entity(hass, "curve_advice_minus_20"))
     assert cold.attributes["extrapolated"] is True
     assert cold.attributes["current"] is None

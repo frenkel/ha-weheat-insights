@@ -318,6 +318,8 @@ export function curveTable(pump: HeatPumpConfig, t: Localize): string | null {
     `**${t("curve_target")}:** {{ state_attr('${first}', 'target_room_temperature') }} °C` +
       ` · ${t("curve_measured")}: {{ state_attr('${first}', 'measured_indoor_temperature') or '–' }} °C`,
     "",
+    `**${t("curve_emitters")}:** {{ {'radiators': '${jinja(t("emitter_radiators"))}', 'underfloor': '${jinja(t("emitter_underfloor"))}', 'mixed': '${jinja(t("emitter_mixed"))}'}.get(state_attr('${first}', 'emitter_type'), '–') }}`,
+    "",
     `{% if reason %}${t("curve_no_advice")} {{ {'no_heat_loss': '${jinja(t("reason_no_heat_loss"))}', 'too_few_steady_hours': '${jinja(t("reason_too_few_steady_hours"))}'}.get(reason, reason) }}{% endif %}`,
     "",
     `| ${t("curve_outdoor")} (°C) | ${t("curve_current")} (°C) | ${t("curve_advice")} (°C) | ${t("curve_range")} (°C) |`,

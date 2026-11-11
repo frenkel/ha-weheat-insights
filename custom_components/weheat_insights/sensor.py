@@ -593,6 +593,7 @@ class CurveAdviceSensor(
             attrs |= {
                 "current": None if current is None else round(current, 1),
                 "target_room_temperature": curve.target_c,
+                "emitter_type": curve.emitter_type,
                 "measured_indoor_temperature": _round(curve.measured_indoor_c, 1),
             }
             if curve.reason is not None:
