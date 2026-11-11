@@ -24,10 +24,10 @@ Assistant: no external server, no accounts, no telemetry.
     temperature, next to your current curve; supply temperature against
     outdoor temperature with both curves; before/after comparison of a curve
     change, corrected for weather.
-  - **Operation**: how often and how long the heat pump heats, makes hot
-    water, defrosts, runs legionella prevention and stands by (today, 7 and 30 days: number of periods,
-    min/avg/max length, hours and share), with
-    periods and hours per day as bar charts and defrosts next to degree days.
+  - **Operation**: how the last 30 days were spent per state (heating, hot
+    water, defrost, legionella prevention, standby), and per state the number
+    of periods today / 7 / 30 days and their average length, with periods and
+    hours per day as bar charts and defrosts next to degree days.
   - **Live**: operating state, COP gauge (while running), room, outdoor,
     supply and return temperatures, ΔT, electrical power and heat output,
     graphs for the last 24 hours and hourly statistics for the last 7 days.
@@ -43,7 +43,7 @@ Assistant: no external server, no accounts, no telemetry.
     degree day before and after a curve change.
   - Per operating state: periods today (with statistics for 7 and 30 days)
     and running totals of periods and hours.
-- Two custom cards you can also use on your own dashboards (see below).
+- Three custom cards you can also use on your own dashboards (see below).
 - Works from day one with your existing history: everything is computed from
   Home Assistant's long-term statistics of the core Weheat energy counters.
 - Works with multiple heat pumps. English and Dutch.
@@ -112,7 +112,7 @@ real and are kept on purpose.
 
 ### Cards for your own dashboards
 
-The dashboard uses two cards that you can also add to any other dashboard.
+The dashboard uses three cards that you can also add to any other dashboard.
 You find the `entry_id` by opening **Settings → Devices & services → Weheat
 Insights**: the address bar then ends in `#config_entry=<entry_id>`.
 
@@ -128,12 +128,27 @@ entry_id: <entry_id>
 mode: heat_loss
 
 # Supply temperature against outdoor temperature, coloured by ΔT,
-# with the current and the advised heating curve
+# with the current heating curve (a dot while only one point is known)
+# and the advised heating curve
 type: custom:weheat-insights-scatter-card
 entry_id: <entry_id>
 mode: supply_curve
 days: 60
+
+# Time per operating state and number and length of periods
+# (the operating sensors of the "Weheat Insights" device)
+type: custom:weheat-insights-operating-card
+entities:
+  heating: sensor.<pump>_weheat_insights_heating_periods_today
+  dhw: sensor.<pump>_weheat_insights_hot_water_periods_today
+  defrost: sensor.<pump>_weheat_insights_defrost_periods_today
+  legionella: sensor.<pump>_weheat_insights_legionella_prevention_periods_today
+  standby: sensor.<pump>_weheat_insights_standby_periods_today
 ```
+
+The operating card needs the entity ids of the "periods today" sensors; look
+them up on the Weheat Insights device, since they depend on your language
+and device name.
 
 ## How the numbers are calculated
 
