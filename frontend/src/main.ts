@@ -9,6 +9,7 @@
 import { errorDashboard, generateDashboard } from "./dashboard";
 import { localizer } from "./localize";
 import { PERFORMANCE_CARD_TAG, WeheatInsightsPerformanceCard } from "./performance-card";
+import { SCATTER_CARD_TAG, WeheatInsightsScatterCard } from "./scatter-card";
 import type { DashboardConfigResponse, HomeAssistant, LovelaceConfig } from "./types";
 
 const STRATEGY_TAG = "ll-strategy-dashboard-weheat-insights";
@@ -36,6 +37,10 @@ if (!customElements.get(PERFORMANCE_CARD_TAG)) {
   customElements.define(PERFORMANCE_CARD_TAG, WeheatInsightsPerformanceCard);
 }
 
+if (!customElements.get(SCATTER_CARD_TAG)) {
+  customElements.define(SCATTER_CARD_TAG, WeheatInsightsScatterCard);
+}
+
 declare global {
   interface Window {
     customStrategies?: { type: string; name: string; description: string; strategyType?: string }[];
@@ -49,6 +54,14 @@ if (!window.customCards.some((c) => c.type === PERFORMANCE_CARD_TAG)) {
     type: PERFORMANCE_CARD_TAG,
     name: "Weheat Insights performance",
     description: "COP per day, month or season for heating and hot water (unofficial)",
+  });
+}
+
+if (!window.customCards.some((c) => c.type === SCATTER_CARD_TAG)) {
+  window.customCards.push({
+    type: SCATTER_CARD_TAG,
+    name: "Weheat Insights scatter",
+    description: "Heat loss of the house or supply vs outdoor temperature (unofficial)",
   });
 }
 
