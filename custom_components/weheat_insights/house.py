@@ -82,6 +82,9 @@ def build_hour_points(
 # An hour counts for the heating curve when the pump delivered at least this
 # much space-heating heat and (almost) no hot water: hourly means of hours
 # that were mostly idle or doing DHW say nothing about the heating curve.
+# The hour after a hot-water hour is skipped too: when DHW finishes, the
+# pump can push left-over heat into the heating circuit at a high supply
+# temperature, which is booked as space heating.
 MIN_HEATING_KWH_PER_HOUR = 0.5
 MAX_DHW_KWH_PER_HOUR = 0.05
 
@@ -97,9 +100,11 @@ def supply_curve_points(
     points: list[dict[str, float | str]] = []
     for start in sorted(supply):
         heat = heating_kwh.get(start, 0.0)
+        previous = start - timedelta(hours=1)
         if (
             heat < MIN_HEATING_KWH_PER_HOUR
             or dhw_kwh.get(start, 0.0) > MAX_DHW_KWH_PER_HOUR
+            or dhw_kwh.get(previous, 0.0) > MAX_DHW_KWH_PER_HOUR
         ):
             continue
         if start not in outdoor or start not in return_:

@@ -13,15 +13,15 @@ Assistant: no external server, no accounts, no telemetry.
 
 **Available now (0.4)**
 
-- A dashboard that builds itself, with no YAML. For each heat pump:
-  - **Performance** (default tab): COP and SCOP per day, month and heating
+- A dashboard that builds itself, with no YAML. For each heat pump three tabs:
+  - **Performance** (default): COP and SCOP per day, month and heating
     season, for the heat pump (as in the Weheat app) and in total (incl.
-    standby and pumps), split into space heating and hot water; COP over time per day, month or
-    season; what defrosting costs; degree days and heating per degree day
-    compared with last season; energy per day; **house analysis**: heat-loss
-    coefficient with confidence interval, heat loss at −10 °C, balance point,
-    cool-down rate and thermal mass, with scatter charts of daily heat loss
-    and of supply temperature against outdoor temperature.
+    standby and pumps), split into space heating and hot water; COP over
+    time per day, month or season; what defrosting costs; energy per day.
+  - **House**: heat-loss coefficient with confidence interval and scatter
+    chart, heat loss at −10 °C, balance point, cool-down rate and thermal
+    mass; degree days and heating per degree day compared with last season;
+    supply temperature against outdoor temperature (heating curve).
   - **Live**: operating state, COP gauge (while running), room, outdoor,
     supply and return temperatures, ΔT, electrical power and heat output,
     history for the last 24 hours and hourly statistics for the last 7 days.
@@ -146,7 +146,9 @@ separate frontend install.
   mass C = τ × H. A modulating heat pump that runs all night leaves few such
   periods, so this can take a while to appear.
 - The heating-curve chart only uses hours in which the pump mainly heated
-  the house (at least 0.5 kWh space heating, no hot water).
+  the house (at least 0.5 kWh space heating, no hot water), and skips the
+  hour after hot water, when left-over DHW heat can be pushed into the
+  heating circuit at a high supply temperature.
 
 COP/SCOP sensors have no `state_class` on purpose: Home Assistant would store
 hourly averages of a running ratio, which mean nothing. Use the performance

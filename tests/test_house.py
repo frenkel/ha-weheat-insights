@@ -163,15 +163,16 @@ def test_build_day_points_with_assumed_indoor() -> None:
 
 
 def test_supply_curve_points_keep_only_space_heating_hours() -> None:
-    t = [datetime(2026, 11, 1, h, tzinfo=dt_util.UTC) for h in range(4)]
+    t = [datetime(2026, 11, 1, h, tzinfo=dt_util.UTC) for h in range(5)]
     points = supply_curve_points(
-        outdoor={t[0]: 5.0, t[1]: 4.0, t[2]: 3.0, t[3]: 2.0},
-        supply={t[0]: 32.0, t[1]: 50.0, t[2]: 22.0, t[3]: 34.0},
-        return_={t[0]: 28.0, t[1]: 45.0, t[2]: 21.0},
-        heating_kwh={t[0]: 1.5, t[1]: 1.0, t[2]: 0.1, t[3]: 1.2},
+        outdoor={t[0]: 5.0, t[1]: 4.0, t[2]: 3.0, t[3]: 2.0, t[4]: 2.0},
+        supply={t[0]: 32.0, t[1]: 50.0, t[2]: 40.0, t[3]: 22.0, t[4]: 34.0},
+        return_={t[0]: 28.0, t[1]: 45.0, t[2]: 38.0, t[3]: 21.0},
+        heating_kwh={t[0]: 1.5, t[1]: 1.0, t[2]: 1.2, t[3]: 0.1, t[4]: 1.2},
         dhw_kwh={t[1]: 1.8},
     )
-    # t1 was hot water, t2 mostly idle, t3 has no return temperature.
+    # t1 was hot water, t2 got left-over DHW heat, t3 mostly idle,
+    # t4 has no return temperature.
     assert points == [
         {
             "time": t[0].isoformat(),

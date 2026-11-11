@@ -202,21 +202,6 @@ export function performanceView(pump: HeatPumpConfig, t: Localize, index: number
   // The card has its own title, so no heading above it.
   const history = section([{ type: `custom:${PERFORMANCE_CARD_TAG}`, entry_id: pump.entry_id }], 2, true);
 
-  const degreeDays = pump.degree_days_statistic_id
-    ? { entity: pump.degree_days_statistic_id, name: t("degree_days") }
-    : null;
-  const weather = section([
-    heading(t("heat_per_degree_day"), "mdi:home-thermometer-outline"),
-    tile(i.heat_per_degree_day_season, t("this_season")),
-    tile(i.heat_per_degree_day_last_year, t("last_year_to_date")),
-    tile(i.heat_per_degree_day_last_season, t("whole_last_season")),
-    heading(t("degree_days"), "mdi:thermometer-lines"),
-    tile(i.degree_days_month, t("this_month")),
-    tile(i.degree_days_season, t("this_season")),
-    degreeDays ? changeBars(t("degree_days_per_month"), [degreeDays], "month", 400) : null,
-    degreeDays ? changeBars(t("degree_days_per_day"), [degreeDays], "day", 30) : null,
-  ]);
-
   const energy = section(
     [
       heading(t("energy_per_day"), "mdi:lightning-bolt"),
@@ -245,25 +230,6 @@ export function performanceView(pump: HeatPumpConfig, t: Localize, index: number
     2,
   );
 
-  const house = section([
-    heading(t("house"), "mdi:home-thermometer"),
-    tile(i.heat_loss_coefficient, t("heat_loss_coefficient")),
-    tile(i.heat_loss_design_load, t("heat_loss_design")),
-    tile(i.balance_point, t("balance_point")),
-    tile(i.cool_down_time_constant, t("cool_down_tau")),
-    tile(i.cool_down_rate, t("cool_down_rate")),
-    tile(i.thermal_mass, t("thermal_mass")),
-    { type: "markdown", content: t("house_definitions") },
-  ]);
-  const houseCharts = section(
-    [
-      { type: `custom:${SCATTER_CARD_TAG}`, entry_id: pump.entry_id, mode: "heat_loss" },
-      { type: `custom:${SCATTER_CARD_TAG}`, entry_id: pump.entry_id, mode: "supply_curve", days: 60 },
-    ],
-    2,
-    true,
-  );
-
   const about = section([heading(t("title"), "mdi:information-outline"), { type: "markdown", content: `${t("definitions")}\n\n_${t("disclaimer")}_` }]);
 
   return {
@@ -272,7 +238,62 @@ export function performanceView(pump: HeatPumpConfig, t: Localize, index: number
     icon: "mdi:chart-bar",
     type: "sections",
     max_columns: 4,
-    sections: present([headline, history, house, houseCharts, weather, energy, about]),
+    sections: present([headline, history, energy, about]),
+  };
+}
+
+export function houseView(pump: HeatPumpConfig, t: Localize, index: number): LovelaceViewConfig {
+  const i = pump.insights;
+
+  const house = section([
+    heading(t("house"), "mdi:home-thermometer"),
+    tile(i.heat_loss_coefficient, t("heat_loss_short")),
+    tile(i.heat_loss_design_load, t("heat_loss_design")),
+    tile(i.balance_point, t("balance_point")),
+    tile(i.cool_down_time_constant, t("cool_down_tau")),
+    tile(i.cool_down_rate, t("cool_down_rate")),
+    tile(i.thermal_mass, t("thermal_mass")),
+  ]);
+  const houseCharts = section(
+    [{ type: `custom:${SCATTER_CARD_TAG}`, entry_id: pump.entry_id, mode: "heat_loss" }],
+    2,
+    true,
+  );
+  // Start of the heating-curve analysis; gets its own tab in phase 4.
+  const heatingCurve = section(
+    [
+      heading(t("heating_curve"), "mdi:chart-bell-curve-cumulative"),
+      { type: `custom:${SCATTER_CARD_TAG}`, entry_id: pump.entry_id, mode: "supply_curve", days: 60 },
+    ],
+    2,
+  );
+  const explanation = section([
+    heading(t("title"), "mdi:information-outline"),
+    { type: "markdown", content: `${t("house_definitions")}\n\n_${t("disclaimer")}_` },
+  ]);
+
+  const degreeDays = pump.degree_days_statistic_id
+    ? { entity: pump.degree_days_statistic_id, name: t("degree_days") }
+    : null;
+  const weather = section([
+    heading(t("heat_per_degree_day"), "mdi:home-thermometer-outline"),
+    tile(i.heat_per_degree_day_season, t("this_season")),
+    tile(i.heat_per_degree_day_last_year, t("last_year_to_date")),
+    tile(i.heat_per_degree_day_last_season, t("whole_last_season")),
+    heading(t("degree_days"), "mdi:thermometer-lines"),
+    tile(i.degree_days_month, t("this_month")),
+    tile(i.degree_days_season, t("this_season")),
+    degreeDays ? changeBars(t("degree_days_per_month"), [degreeDays], "month", 400) : null,
+    degreeDays ? changeBars(t("degree_days_per_day"), [degreeDays], "day", 30) : null,
+  ]);
+
+  return {
+    title: `${pump.name} · ${t("house")}`,
+    path: index === 0 ? "house" : `house-${index + 1}`,
+    icon: "mdi:home-thermometer-outline",
+    type: "sections",
+    max_columns: 4,
+    sections: present([house, houseCharts, weather, heatingCurve, explanation]),
   };
 }
 
@@ -292,7 +313,11 @@ export function generateDashboard(pumps: HeatPumpConfig[], t: Localize): Lovelac
   return {
     title: t("title"),
     // Performance first: it is the default tab; live status second.
-    views: pumps.flatMap((pump, index) => [performanceView(pump, t, index), pumpView(pump, t, index)]),
+    views: pumps.flatMap((pump, index) => [
+      performanceView(pump, t, index),
+      houseView(pump, t, index),
+      pumpView(pump, t, index),
+    ]),
   };
 }
 
