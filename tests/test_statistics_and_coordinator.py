@@ -169,3 +169,51 @@ def test_settings_from_options() -> None:
         {"season_start_month": "10", "degree_day_base": 15.5}
     )
     assert settings == Settings(season_start_month=10, degree_day_base=15.5)
+
+
+async def test_history_imported_in_front_has_no_negative_first_period(
+    hass: HomeAssistant, freezer
+) -> None:
+    """History prepended before existing rows starts with a negative sum.
+
+    The recorder computes the first period's change against zero, which would
+    give one hugely negative day or month; that period is left out.
+    """
+    await hass.config.async_set_time_zone("Europe/Amsterdam")
+    freezer.move_to("2026-11-11 12:00:00+01:00")
+    meta = {
+        "has_sum": True,
+        "mean_type": StatisticMeanType.NONE,
+        "name": None,
+        "source": "recorder",
+        "statistic_id": "sensor.heat_in",
+        "unit_class": "energy",
+        "unit_of_measurement": "kWh",
+    }
+    anchor = dt_util.start_of_local_day(date(2026, 9, 14))
+    existing = [
+        {"start": anchor + timedelta(hours=h), "state": 700 + 0.1 * h, "sum": 0.1 * h}
+        for h in range(24 * 10)
+    ]
+    first = dt_util.start_of_local_day(date(2025, 11, 12))
+    hours = int((anchor - first).total_seconds() // 3600)
+    prepended = [
+        {
+            "start": first + timedelta(hours=h),
+            "state": 700 - 0.1 * (hours - h),
+            "sum": -0.1 * (hours - h),
+        }
+        for h in range(hours)
+    ]
+    async_import_statistics(hass, meta, existing)
+    async_import_statistics(hass, meta, prepended)
+    await async_wait_recording_done(hass)
+
+    entities = {WeheatKey.ELECTRICITY_USED_HEATING: "sensor.heat_in"}
+    for period in ("day", "month"):
+        energy = await async_energy(
+            hass, entities, date(2025, 9, 1), date(2026, 11, 12), period
+        )
+        assert min(v.in_heating for v in energy.values()) >= 0, period
+    daily = await async_energy(hass, entities, date(2025, 9, 1), date(2026, 11, 12))
+    assert daily[date(2026, 1, 15)].in_heating == pytest.approx(2.4)

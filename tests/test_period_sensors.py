@@ -48,7 +48,12 @@ COUNTERS = {
 
 
 def _import(hass, statistic_id, start, hours, per_hour, *, mean=False):
-    rows = []
+    # Like the recorder: a counter's first row holds a running total of 0.
+    rows = (
+        []
+        if mean
+        else [{"start": start - timedelta(hours=1), "state": 0.0, "sum": 0.0}]
+    )
     total = 0.0
     for hour in range(hours):
         when = start + timedelta(hours=hour)

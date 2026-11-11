@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
 from dataclasses import replace
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from functools import partial
 
 from homeassistant.components.recorder import get_instance
@@ -103,7 +103,41 @@ async def async_energy(
         {"energy": UnitOfEnergy.KILO_WATT_HOUR},
         {"change"},
     )
+    await _async_rebase_first_period(hass, rows, local_midnight(start))
     return _within(rows_to_energy(rows, counters), start, end)
+
+
+async def _async_rebase_first_period(
+    hass: HomeAssistant, rows: dict[str, list[StatisticsRow]], start: datetime
+) -> None:
+    """Correct the first period of statistics that begin inside the window.
+
+    The recorder computes the "change" of a statistic's very first period
+    against zero. For a sensor recorded from scratch the running total starts
+    at 0, so that is right; for history imported in front of existing data it
+    starts at a large negative value, which would show up as one hugely
+    negative day or month. Subtract the first hour's running total instead.
+    """
+    for statistic_id, statistic_rows in rows.items():
+        if not statistic_rows:
+            continue
+        first = min(statistic_rows, key=lambda row: row["start"])
+        if first["start"] <= start.timestamp() or first.get("change") is None:
+            continue
+        first_start = dt_util.utc_from_timestamp(first["start"])
+        hourly = await get_instance(hass).async_add_executor_job(
+            statistics_during_period,
+            hass,
+            first_start,
+            first_start + timedelta(days=32),
+            {statistic_id},
+            "hour",
+            {"energy": UnitOfEnergy.KILO_WATT_HOUR},
+            {"sum"},
+        )
+        hours = sorted(hourly.get(statistic_id, []), key=lambda row: row["start"])
+        if hours and hours[0].get("sum") is not None:
+            first["change"] = first["change"] - hours[0]["sum"]
 
 
 async def async_daily_means(
