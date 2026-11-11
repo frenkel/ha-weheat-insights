@@ -70,7 +70,12 @@ function section(
 /** The "Weheat Insights" explanation at the bottom of a tab, two columns wide. */
 function aboutSection(t: Localize, key: "definitions" | "house_definitions" | "curve_definitions" | "op_definitions") {
   return section(
-    [heading(t("title"), "mdi:information-outline"), { type: "markdown", content: `${t(key)}\n\n_${t("disclaimer")}_` }],
+    [heading(t("title"), "mdi:information-outline"), {
+      type: "markdown",
+      content: `${t(key)}\n\n_${t("disclaimer")}_`,
+      // A card fills one column of a section by default, also in a wide one.
+      grid_options: { columns: "full" },
+    }],
     2,
   );
 }
