@@ -10,3 +10,4 @@ frontend/node_modules/
 dev/config/*
 !dev/config/configuration.yaml
 .DS_Store
+frontend/preview/

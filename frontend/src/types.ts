@@ -42,6 +42,8 @@ export interface HeatPumpConfig {
   insights: Partial<Record<string, string>>;
   outdoor_entity_id: string | null;
   indoor_entity_id: string | null;
+  /** External long-term statistic with degree days, if an outdoor sensor is set. */
+  degree_days_statistic_id: string | null;
 }
 
 export interface DashboardConfigResponse {

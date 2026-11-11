@@ -46,10 +46,9 @@ const en = {
   energy_per_day: "Energy per day",
   degree_days_per_day: "Degree days per day",
   degree_days_per_month: "Degree days per month",
-  electricity_heating: "Electricity heating",
-  electricity_dhw: "Electricity hot water",
-  heat_heating: "Heat heating",
-  heat_dhw: "Heat hot water",
+  defrost: "Defrost",
+  standby: "Standby",
+  degree_days: "Degree days",
   definitions:
     "**How these numbers are calculated.** *Total* COP/SCOP is all useful heat divided by all electricity, including standby and the indoor unit. *Heating* and *hot water* only count the compressor electricity for that mode plus its share of defrost (split by electricity use); standby and the indoor unit are left out. Defrost heat taken back from the water counts against the COP. *Heating per degree day* uses heating heat only and lets you compare winters of different coldness. Figures come from Home Assistant's long-term statistics and can lag up to about an hour.",
 };
@@ -102,10 +101,9 @@ const nl: Record<Key, string> = {
   energy_per_day: "Energie per dag",
   degree_days_per_day: "Graaddagen per dag",
   degree_days_per_month: "Graaddagen per maand",
-  electricity_heating: "Stroom verwarming",
-  electricity_dhw: "Stroom warm water",
-  heat_heating: "Warmte verwarming",
-  heat_dhw: "Warmte warm water",
+  defrost: "Ontdooien",
+  standby: "Stand-by",
+  degree_days: "Graaddagen",
   definitions:
     "**Zo worden deze getallen berekend.** De *totale* COP/SCOP is alle nuttige warmte gedeeld door alle stroom, inclusief stand-by en de binnenunit. *Verwarming* en *warm water* tellen alleen de compressorstroom voor die functie plus hun deel van het ontdooien (verdeeld naar stroomverbruik); stand-by en de binnenunit tellen daar niet mee. Warmte die bij ontdooien uit het water wordt gehaald, telt negatief mee. *Verwarming per graaddag* gebruikt alleen verwarmingswarmte, zodat je winters van verschillende koude kunt vergelijken. De cijfers komen uit de langetermijnstatistieken van Home Assistant en kunnen tot ongeveer een uur achterlopen.",
 };

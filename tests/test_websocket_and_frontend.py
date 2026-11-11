@@ -47,6 +47,10 @@ async def test_dashboard_config(
     assert pump["insights"]["delta_t"].startswith("sensor.")
     assert pump["outdoor_entity_id"] == weheat.entity_ids["outside_temperature"]
     assert pump["indoor_entity_id"] is None
+    assert pump["degree_days_statistic_id"] == (
+        "weheat_insights:degree_days_" + PUMP_UUID.replace("-", "_")
+    )
+    assert pump["insights"]["scop_season"].startswith("sensor.")
 
 
 async def test_dashboard_config_skips_unloaded_entries(

@@ -7,6 +7,7 @@
  * creates sensors that the heat pump actually reports.
  */
 import type { Localize } from "./localize";
+import { PERFORMANCE_CARD_TAG } from "./performance-card";
 import type {
   HeatPumpConfig,
   LovelaceCardConfig,
@@ -53,10 +54,32 @@ function statisticsGraph(title: string, entities: Entity[], days: number): Lovel
     : null;
 }
 
-function section(cards: (LovelaceCardConfig | null)[]): LovelaceSectionConfig | null {
+function section(cards: (LovelaceCardConfig | null)[], columnSpan?: number): LovelaceSectionConfig | null {
   const real = present(cards);
   // A section with only its heading is noise.
-  return real.length > 1 ? { type: "grid", cards: real } : null;
+  if (real.length <= 1) return null;
+  return { type: "grid", cards: real, ...(columnSpan ? { column_span: columnSpan } : {}) };
+}
+
+/** Bars of the daily (or monthly) change of energy counters or degree days. */
+function changeBars(
+  title: string,
+  entities: Entity[],
+  period: "day" | "month",
+  days: number,
+): LovelaceCardConfig | null {
+  return entities.length
+    ? {
+        type: "statistics-graph",
+        title,
+        entities,
+        period,
+        days_to_show: days,
+        stat_types: ["change"],
+        chart_type: "bar",
+        grid_options: { columns: "full" },
+      }
+    : null;
 }
 
 /** Heat pump states in which an instantaneous COP means something. */
@@ -154,6 +177,79 @@ export function pumpView(pump: HeatPumpConfig, t: Localize, index: number): Love
   };
 }
 
+export function performanceView(pump: HeatPumpConfig, t: Localize, index: number): LovelaceViewConfig {
+  const w = pump.weheat;
+  const i = pump.insights;
+
+  const headline = section([
+    heading(t("performance"), "mdi:chart-bar"),
+    tile(i.scop_season, t("scop_season")),
+    tile(i.scop_heating_season, `${t("scop_season")} · ${t("heating")}`),
+    tile(i.scop_dhw_season, `${t("scop_season")} · ${t("dhw")}`),
+    tile(i.cop_month, t("cop_month")),
+    tile(i.cop_today, t("cop_today")),
+    tile(i.defrost_cop_impact_season, t("defrost_cop_impact")),
+  ]);
+
+  const history = section(
+    [heading(t("cop_history"), "mdi:chart-timeline-variant"), { type: `custom:${PERFORMANCE_CARD_TAG}`, entry_id: pump.entry_id }],
+    2,
+  );
+
+  const degreeDays = pump.degree_days_statistic_id
+    ? { entity: pump.degree_days_statistic_id, name: t("degree_days") }
+    : null;
+  const weather = section([
+    heading(t("heat_per_degree_day"), "mdi:thermometer-lines"),
+    tile(i.heat_per_degree_day_season, t("heat_per_degree_day")),
+    tile(i.heat_per_degree_day_last_year, t("heat_per_degree_day_last_year")),
+    tile(i.heat_per_degree_day_last_season, t("heat_per_degree_day_last_season")),
+    tile(i.degree_days_month, t("degree_days_month")),
+    tile(i.degree_days_season, t("degree_days_season")),
+    degreeDays ? changeBars(t("degree_days_per_month"), [degreeDays], "month", 400) : null,
+    degreeDays ? changeBars(t("degree_days_per_day"), [degreeDays], "day", 30) : null,
+  ]);
+
+  const energy = section(
+    [
+      heading(t("energy_per_day"), "mdi:lightning-bolt"),
+      changeBars(
+        `${t("energy_per_day")} · ${t("electricity")}`,
+        present([
+          entity(w.electricity_used_heating, t("heating")),
+          entity(w.electricity_used_dhw, t("dhw")),
+          entity(w.electricity_used_defrost, t("defrost")),
+          entity(w.electricity_used_standby, t("standby")),
+        ]),
+        "day",
+        30,
+      ),
+      changeBars(
+        `${t("energy_per_day")} · ${t("heat")}`,
+        present([
+          entity(w.energy_output_heating, t("heating")),
+          entity(w.energy_output_dhw, t("dhw")),
+          entity(w.energy_output_defrost, t("defrost")),
+        ]),
+        "day",
+        30,
+      ),
+    ],
+    2,
+  );
+
+  const about = section([heading(t("title"), "mdi:information-outline"), { type: "markdown", content: `${t("definitions")}\n\n_${t("disclaimer")}_` }]);
+
+  return {
+    title: `${pump.name} · ${t("performance")}`,
+    path: index === 0 ? "performance" : `performance-${index + 1}`,
+    icon: "mdi:chart-bar",
+    type: "sections",
+    max_columns: 4,
+    sections: present([headline, history, weather, energy, about]),
+  };
+}
+
 function messageView(t: Localize, title: string, body: string): LovelaceViewConfig {
   return {
     title: t("title"),
@@ -167,7 +263,10 @@ export function generateDashboard(pumps: HeatPumpConfig[], t: Localize): Lovelac
   if (!pumps.length) {
     return { title: t("title"), views: [messageView(t, t("no_pumps_title"), t("no_pumps_body"))] };
   }
-  return { title: t("title"), views: pumps.map((pump, index) => pumpView(pump, t, index)) };
+  return {
+    title: t("title"),
+    views: pumps.flatMap((pump, index) => [pumpView(pump, t, index), performanceView(pump, t, index)]),
+  };
 }
 
 export function errorDashboard(t: Localize, detail: string): LovelaceConfig {
