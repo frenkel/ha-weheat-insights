@@ -151,6 +151,51 @@
       },
       "heating_curve_change_effect": {
         "name": "Effect of heating curve change"
+      },
+      "operating_heating": {
+        "name": "Heating periods today"
+      },
+      "heating_periods_total": {
+        "name": "Heating periods (total)"
+      },
+      "heating_time_total": {
+        "name": "Heating time (total)"
+      },
+      "operating_dhw": {
+        "name": "Hot water periods today"
+      },
+      "dhw_periods_total": {
+        "name": "Hot water periods (total)"
+      },
+      "dhw_time_total": {
+        "name": "Hot water time (total)"
+      },
+      "operating_defrost": {
+        "name": "Defrost periods today"
+      },
+      "defrost_periods_total": {
+        "name": "Defrost periods (total)"
+      },
+      "defrost_time_total": {
+        "name": "Defrost time (total)"
+      },
+      "operating_standby": {
+        "name": "Standby periods today"
+      },
+      "standby_periods_total": {
+        "name": "Standby periods (total)"
+      },
+      "standby_time_total": {
+        "name": "Standby time (total)"
+      },
+      "operating_other": {
+        "name": "Other states periods today"
+      },
+      "other_periods_total": {
+        "name": "Other states periods (total)"
+      },
+      "other_time_total": {
+        "name": "Other states time (total)"
       }
     }
   },

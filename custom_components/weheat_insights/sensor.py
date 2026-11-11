@@ -36,11 +36,13 @@ from homeassistant.util.unit_conversion import TemperatureConverter
 
 from . import WeheatInsightsConfigEntry
 from .calculations.heating_curve import WEHEAT_CURVE_POINTS
+from .calculations.operating import GROUPS
 from .calculations.temperature import delta_t
 from .coordinator import InsightsData, PeriodResult, WeheatInsightsCoordinator
 from .discovery import WeheatHeatPump, WeheatKey
 from .entity import WeheatInsightsEntity
 from .house import HouseCoordinator, HouseData
+from .operating_tracker import OperatingTracker
 
 PARALLEL_UPDATES = 0
 
@@ -78,6 +80,15 @@ async def async_setup_entry(
             HouseSensor(data.pump, data.house, description)
             for description in COMPARISON_SENSORS
         )
+    if data.operating is not None:
+        for group in GROUPS:
+            entities.append(OperatingSummarySensor(data.pump, data.operating, group))
+            entities.append(
+                OperatingCounterSensor(data.pump, data.operating, group, "count")
+            )
+            entities.append(
+                OperatingCounterSensor(data.pump, data.operating, group, "time")
+            )
     async_add_entities(entities)
 
 
@@ -607,3 +618,94 @@ class CurveAdviceSensor(
                 "no_heat_needed": point.no_heat_needed,
             }
         return attrs
+
+
+class _OperatingEntity(WeheatInsightsEntity, SensorEntity):
+    """Updates when the operating tracker reports a change."""
+
+    def __init__(
+        self, pump: WeheatHeatPump, tracker: OperatingTracker, key: str
+    ) -> None:
+        """Initialise."""
+        super().__init__(pump, key)
+        self._tracker = tracker
+
+    async def async_added_to_hass(self) -> None:
+        """Follow the tracker."""
+        self.async_on_remove(
+            self._tracker.async_add_listener(self.async_write_ha_state)
+        )
+
+
+class OperatingSummarySensor(_OperatingEntity):
+    """Number of periods today in one operating state, with full statistics."""
+
+    def __init__(
+        self, pump: WeheatHeatPump, tracker: OperatingTracker, group: str
+    ) -> None:
+        """Initialise."""
+        super().__init__(pump, tracker, f"operating_{group}")
+        self._group = group
+
+    @property
+    def native_value(self) -> int:
+        """Periods that ended today."""
+        return self._tracker.summary()["today"][self._group].count
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Count, length (min/avg/max, minutes), time and share per window."""
+        attrs: dict[str, Any] = {}
+        for window, stats in self._tracker.summary().items():
+            figures = stats[self._group]
+            attrs |= {
+                f"{window}_count": figures.count,
+                f"{window}_min_minutes": _round(figures.min_minutes, 1),
+                f"{window}_avg_minutes": _round(figures.avg_minutes, 1),
+                f"{window}_max_minutes": _round(figures.max_minutes, 1),
+                f"{window}_hours": round(figures.total_hours, 2),
+                f"{window}_share_percent": round(figures.share_percent, 1),
+            }
+            if self._group == "heating":
+                attrs[f"{window}_short_count"] = figures.short_count
+        open_ = self._tracker.open
+        attrs["active_since"] = (
+            open_[1].isoformat()
+            if open_ is not None and open_[0] == self._group
+            else None
+        )
+        return attrs
+
+
+class OperatingCounterSensor(_OperatingEntity):
+    """Running total of periods or time in one state, for long-term statistics."""
+
+    _attr_state_class = SensorStateClass.TOTAL_INCREASING
+
+    def __init__(
+        self,
+        pump: WeheatHeatPump,
+        tracker: OperatingTracker,
+        group: str,
+        kind: str,
+    ) -> None:
+        """Initialise; ``kind`` is "count" or "time"."""
+        super().__init__(
+            pump,
+            tracker,
+            f"{group}_periods_total" if kind == "count" else f"{group}_time_total",
+        )
+        self._group = group
+        self._kind = kind
+        if kind == "time":
+            self._attr_device_class = SensorDeviceClass.DURATION
+            self._attr_native_unit_of_measurement = UnitOfTime.HOURS
+            self._attr_suggested_display_precision = 1
+
+    @property
+    def native_value(self) -> float:
+        """Completed periods, or hours in this state, since tracking started."""
+        total = self._tracker.totals[self._group]
+        if self._kind == "count":
+            return int(total["count"])
+        return round(total["seconds"] / 3600, 3)

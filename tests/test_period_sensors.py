@@ -30,6 +30,12 @@ from .conftest import PUMP_UUID, WEHEAT_SENSORS, add_weheat_pump
 
 COMPONENT = Path(__file__).parent.parent / "custom_components" / "weheat_insights"
 
+OPERATING_KEYS = {
+    key
+    for group in ("heating", "dhw", "defrost", "standby", "other")
+    for key in (f"operating_{group}", f"{group}_periods_total", f"{group}_time_total")
+}
+
 COUNTERS = {
     "electricity_used_heating": 0.4,  # kWh per hour
     "electricity_used_dhw": 0.1,
@@ -150,17 +156,25 @@ def test_every_sensor_has_a_translated_name(lang: str) -> None:
     names = json.loads((COMPONENT / "translations" / f"{lang}.json").read_text())[
         "entity"
     ]["sensor"]
-    keys = {
-        d.translation_key
-        for d in [*PERIOD_SENSORS, *HOUSE_SENSORS, *COMPARISON_SENSORS]
-    } | {"delta_t", "curve_advice"}
+    keys = (
+        {
+            d.translation_key
+            for d in [*PERIOD_SENSORS, *HOUSE_SENSORS, *COMPARISON_SENSORS]
+        }
+        | {"delta_t", "curve_advice"}
+        | OPERATING_KEYS
+    )
     assert keys <= names.keys()
 
 
 def test_every_sensor_has_an_icon() -> None:
     icons = json.loads((COMPONENT / "icons.json").read_text())["entity"]["sensor"]
-    keys = {
-        d.translation_key
-        for d in [*PERIOD_SENSORS, *HOUSE_SENSORS, *COMPARISON_SENSORS]
-    } | {"delta_t", "curve_advice"}
+    keys = (
+        {
+            d.translation_key
+            for d in [*PERIOD_SENSORS, *HOUSE_SENSORS, *COMPARISON_SENSORS]
+        }
+        | {"delta_t", "curve_advice"}
+        | OPERATING_KEYS
+    )
     assert keys <= icons.keys()

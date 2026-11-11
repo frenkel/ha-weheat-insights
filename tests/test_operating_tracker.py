@@ -3,6 +3,7 @@
 from datetime import timedelta
 
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import async_fire_time_changed
 from pytest_homeassistant_custom_component.components.recorder.common import (
@@ -10,6 +11,8 @@ from pytest_homeassistant_custom_component.components.recorder.common import (
 )
 
 from custom_components.weheat_insights.operating_tracker import OperatingTracker
+
+from .conftest import PUMP_UUID
 
 ENTITY = "sensor.weheat_state"
 
@@ -91,3 +94,48 @@ async def test_backfills_from_history(hass: HomeAssistant, freezer) -> None:
     async_fire_time_changed(hass, dt_util.utcnow() + timedelta(minutes=6))
     await hass.async_block_till_done()
     await tracker.async_stop()
+
+
+async def test_operating_sensors(
+    hass: HomeAssistant, insights_entry, weheat, freezer
+) -> None:
+    state_entity = weheat.entity_ids["heat_pump_state"]
+    base = dt_util.parse_datetime("2026-11-11 08:00:00+00:00")
+    freezer.move_to(base)
+    hass.states.async_set(state_entity, "standby")
+    await hass.config_entries.async_setup(insights_entry.entry_id)
+    await hass.async_block_till_done()
+
+    for minutes, state in (
+        (10, "heating"),
+        (25, "standby"),
+        (40, "heating"),
+        (90, "dhw"),
+    ):
+        freezer.move_to(base + timedelta(minutes=minutes))
+        hass.states.async_set(state_entity, state)
+        await hass.async_block_till_done()
+
+    registry = er.async_get(hass)
+
+    def state_of(key):
+        entity_id = registry.async_get_entity_id(
+            "sensor", "weheat_insights", f"{PUMP_UUID}_{key}"
+        )
+        return hass.states.get(entity_id)
+
+    heating = state_of("operating_heating")
+    assert heating.state == "2"
+    assert heating.attributes["today_short_count"] == 0
+    assert heating.attributes["today_min_minutes"] == 15.0
+    assert heating.attributes["today_max_minutes"] == 50.0
+    assert state_of("operating_dhw").attributes["active_since"] is not None
+
+    count = state_of("heating_periods_total")
+    assert count.state == "2"
+    assert count.attributes["state_class"] == "total_increasing"
+    time_total = state_of("heating_time_total")
+    assert float(time_total.state) == round(65 / 60, 3)
+    assert time_total.attributes["unit_of_measurement"] == "h"
+
+    await hass.config_entries.async_unload(insights_entry.entry_id)

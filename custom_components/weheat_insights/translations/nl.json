@@ -151,6 +151,51 @@
       },
       "heating_curve_change_effect": {
         "name": "Effect stooklijnwijziging"
+      },
+      "operating_heating": {
+        "name": "Verwarming: periodes vandaag"
+      },
+      "heating_periods_total": {
+        "name": "Verwarming: periodes (totaal)"
+      },
+      "heating_time_total": {
+        "name": "Verwarming: tijd (totaal)"
+      },
+      "operating_dhw": {
+        "name": "Warm water: periodes vandaag"
+      },
+      "dhw_periods_total": {
+        "name": "Warm water: periodes (totaal)"
+      },
+      "dhw_time_total": {
+        "name": "Warm water: tijd (totaal)"
+      },
+      "operating_defrost": {
+        "name": "Ontdooien: periodes vandaag"
+      },
+      "defrost_periods_total": {
+        "name": "Ontdooien: periodes (totaal)"
+      },
+      "defrost_time_total": {
+        "name": "Ontdooien: tijd (totaal)"
+      },
+      "operating_standby": {
+        "name": "Stand-by: periodes vandaag"
+      },
+      "standby_periods_total": {
+        "name": "Stand-by: periodes (totaal)"
+      },
+      "standby_time_total": {
+        "name": "Stand-by: tijd (totaal)"
+      },
+      "operating_other": {
+        "name": "Overige toestanden: periodes vandaag"
+      },
+      "other_periods_total": {
+        "name": "Overige toestanden: periodes (totaal)"
+      },
+      "other_time_total": {
+        "name": "Overige toestanden: tijd (totaal)"
       }
     }
   },

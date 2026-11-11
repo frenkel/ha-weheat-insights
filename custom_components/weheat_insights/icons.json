@@ -90,6 +90,51 @@
       },
       "heating_curve_change_effect": {
         "default": "mdi:swap-vertical"
+      },
+      "operating_heating": {
+        "default": "mdi:radiator"
+      },
+      "heating_periods_total": {
+        "default": "mdi:radiator"
+      },
+      "heating_time_total": {
+        "default": "mdi:radiator"
+      },
+      "operating_dhw": {
+        "default": "mdi:water-boiler"
+      },
+      "dhw_periods_total": {
+        "default": "mdi:water-boiler"
+      },
+      "dhw_time_total": {
+        "default": "mdi:water-boiler"
+      },
+      "operating_defrost": {
+        "default": "mdi:snowflake-melt"
+      },
+      "defrost_periods_total": {
+        "default": "mdi:snowflake-melt"
+      },
+      "defrost_time_total": {
+        "default": "mdi:snowflake-melt"
+      },
+      "operating_standby": {
+        "default": "mdi:power-sleep"
+      },
+      "standby_periods_total": {
+        "default": "mdi:power-sleep"
+      },
+      "standby_time_total": {
+        "default": "mdi:power-sleep"
+      },
+      "operating_other": {
+        "default": "mdi:dots-horizontal-circle-outline"
+      },
+      "other_periods_total": {
+        "default": "mdi:dots-horizontal-circle-outline"
+      },
+      "other_time_total": {
+        "default": "mdi:dots-horizontal-circle-outline"
       }
     }
   }
