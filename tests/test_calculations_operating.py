@@ -51,7 +51,7 @@ def test_periods_merge_same_group_and_stop_at_gaps() -> None:
 
 def test_window_stats() -> None:
     periods = [
-        Period("heating", at(0), at(8)),  # short
+        Period("heating", at(0), at(8)),
         Period("standby", at(8), at(60)),
         Period("heating", at(60), at(120)),
         Period("defrost", at(120), at(124)),
@@ -63,7 +63,6 @@ def test_window_stats() -> None:
     assert heating.min_minutes == pytest.approx(8)
     assert heating.max_minutes == pytest.approx(60)
     assert heating.avg_minutes == pytest.approx(34)
-    assert heating.short_count == 1
     # Time is clipped to the window: 8 + 60 + 56 minutes.
     assert heating.total_hours == pytest.approx(124 / 60)
     assert heating.share_percent == pytest.approx(124 / 180 * 100)

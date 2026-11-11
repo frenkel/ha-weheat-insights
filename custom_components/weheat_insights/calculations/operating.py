@@ -29,8 +29,6 @@ STATE_GROUPS: dict[str, str] = {
     "updating": "other",
 }
 
-SHORT_HEATING_MINUTES = 10.0
-
 
 def group_of(state: str | None) -> str | None:
     """Group of a core Weheat operating state, None for a gap."""
@@ -83,7 +81,6 @@ class GroupStats:
     max_minutes: float | None
     total_hours: float
     share_percent: float
-    short_count: int  # only meaningful for heating
 
 
 def window_stats(
@@ -111,6 +108,5 @@ def window_stats(
             max_minutes=max(lengths) if lengths else None,
             total_hours=clipped / 3600,
             share_percent=clipped / 3600 / window_hours * 100,
-            short_count=sum(1 for m in lengths if m < SHORT_HEATING_MINUTES),
         )
     return result

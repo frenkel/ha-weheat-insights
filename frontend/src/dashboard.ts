@@ -307,6 +307,9 @@ const CURVE_POINTS: [number, string][] = [
 /** Text safe inside a single-quoted Jinja string. */
 const jinja = (text: string) => text.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
 
+/** Keep a table label or header on one line (non-breaking spaces and hyphens). */
+const noWrap = (text: string) => text.replace(/ /g, "\u00a0").replace(/-/g, "\u2011");
+
 /** Jinja expression printing a number in the language's notation, '–' if none. */
 function jinjaNum(expr: string, sep: string, digits = 1): string {
   return `{{ (('%.${digits}f' | format(${expr})) | replace('.', '${sep}')) if (${expr}) is not none else '–' }}`;
@@ -319,9 +322,9 @@ export function operatingTables(pump: HeatPumpConfig, t: Localize): string | nul
   const groups = OPERATING_GROUPS.filter((g) => pump.insights[`operating_${g}`]);
   if (!groups.length) return null;
   const sep = t("decimal_separator");
-  const label = (g: string) => (g === "other" ? t("op_other") : g === "standby" ? t("standby") : t(g as never));
+  const label = (g: string) =>
+    noWrap(g === "other" ? t("op_other") : g === "standby" ? t("standby") : t(g as never));
   const attr = (g: string, name: string) => `state_attr('${pump.insights[`operating_${g}`]}', '${name}')`;
-  const heating = pump.insights.operating_heating;
   return [
     `**${t("op_counts")}**`,
     "",
@@ -331,11 +334,6 @@ export function operatingTables(pump: HeatPumpConfig, t: Localize): string | nul
       (g) =>
         `| ${label(g)} | {{ ${attr(g, "today_count")} }} | {{ ${attr(g, "7d_count")} }} | {{ ${attr(g, "30d_count")} }} |`,
     ),
-    ...(heating
-      ? [
-          `| _${t("op_short")}_ | {{ ${attr("heating", "today_short_count")} }} | {{ ${attr("heating", "7d_short_count")} }} | {{ ${attr("heating", "30d_short_count")} }} |`,
-        ]
-      : []),
     "",
     `**${t("op_lengths")}**`,
     "",
@@ -368,7 +366,7 @@ export function curveTable(pump: HeatPumpConfig, t: Localize): string | null {
     "",
     `{% if reason %}${t("curve_no_advice")} {{ {'no_heat_loss': '${jinja(t("reason_no_heat_loss"))}', 'too_few_steady_hours': '${jinja(t("reason_too_few_steady_hours"))}'}.get(reason, reason) }}{% endif %}`,
     "",
-    `| ${t("curve_outdoor")} (°C) | ${t("curve_current")} (°C) | ${t("curve_advice")} (°C) | ${t("curve_range")} (°C) |`,
+    `| ${noWrap(`${t("curve_outdoor")} (°C)`)} | ${noWrap(`${t("curve_current")} (°C)`)} | ${noWrap(`${t("curve_advice")} (°C)`)} | ${noWrap(`${t("curve_range")} (°C)`)} |`,
     "|---:|---:|---:|:---|",
     ...rows.map(([outdoor, key]) => {
       const e = pump.insights[key]!;
@@ -393,10 +391,10 @@ export function curveTable(pump: HeatPumpConfig, t: Localize): string | null {
 export function curveView(pump: HeatPumpConfig, t: Localize, index: number): LovelaceViewConfig {
   const i = pump.insights;
   const table = curveTable(pump, t);
-  const advice = section([
-    heading(t("curve_advice"), "mdi:chart-bell-curve-cumulative"),
-    table ? { type: "markdown", content: table } : null,
-  ]);
+  const advice = section(
+    [heading(t("curve_advice"), "mdi:chart-bell-curve-cumulative"), table ? { type: "markdown", content: table } : null],
+    2,
+  );
   const chart = section(
     [{ type: `custom:${SCATTER_CARD_TAG}`, entry_id: pump.entry_id, mode: "supply_curve", days: 60 }],
     2,
@@ -430,10 +428,10 @@ export function operationView(pump: HeatPumpConfig, t: Localize, index: number):
   const counters = (suffix: string, groups: readonly string[]) =>
     present(groups.map((g) => entity(i[`${g}${suffix}`], label(g))));
 
-  const summary = section([
-    heading(t("operation"), "mdi:state-machine"),
-    tables ? { type: "markdown", content: tables } : null,
-  ]);
+  const summary = section(
+    [heading(t("operation"), "mdi:state-machine"), tables ? { type: "markdown", content: tables } : null],
+    2,
+  );
   const perDay = section(
     [
       changeBars(t("op_periods_per_day"), counters("_periods_total", ["heating", "dhw", "defrost"]), "day", 30),

@@ -26,7 +26,7 @@ Assistant: no external server, no accounts, no telemetry.
     change, corrected for weather.
   - **Operation**: how often and how long the heat pump heats, makes hot
     water, defrosts and stands by (today, 7 and 30 days: number of periods,
-    min/avg/max length, hours and share, short heating periods), with
+    min/avg/max length, hours and share), with
     periods and hours per day as bar charts and defrosts next to degree days.
   - **Live**: operating state, COP gauge (while running), room, outdoor,
     supply and return temperatures, ΔT, electrical power and heat output,

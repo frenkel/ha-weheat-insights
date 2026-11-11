@@ -666,8 +666,6 @@ class OperatingSummarySensor(_OperatingEntity):
                 f"{window}_hours": round(figures.total_hours, 2),
                 f"{window}_share_percent": round(figures.share_percent, 1),
             }
-            if self._group == "heating":
-                attrs[f"{window}_short_count"] = figures.short_count
         open_ = self._tracker.open
         attrs["active_since"] = (
             open_[1].isoformat()

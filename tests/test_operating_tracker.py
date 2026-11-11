@@ -126,7 +126,6 @@ async def test_operating_sensors(
 
     heating = state_of("operating_heating")
     assert heating.state == "2"
-    assert heating.attributes["today_short_count"] == 0
     assert heating.attributes["today_min_minutes"] == 15.0
     assert heating.attributes["today_max_minutes"] == 50.0
     assert state_of("operating_dhw").attributes["active_since"] is not None
