@@ -89,6 +89,16 @@ each state ran, with hours per state per day.
 
 ![Operation tab: hours per day](docs/images/hours-per-day.png)
 
+**Hot water**: key figures of the last 30 days, the tank top and bottom over
+48 hours (heating up, tapping, cooling down), and the COP per day against
+the tank temperature, with legionella-prevention days apart.
+
+![Hot water tab: key figures](docs/images/hot-water-summary.png)
+
+![Hot water tab: tank temperature over 48 hours](docs/images/hot-water-tank.png)
+
+![Hot water tab: COP against tank temperature](docs/images/hot-water-cop.png)
+
 ## Requirements
 
 - Home Assistant 2026.10 or newer.
@@ -369,6 +379,14 @@ talk to the Weheat cloud and cannot control your heat pump.
 ## Development
 
 See [docs/development.md](docs/development.md).
+
+## Made by Lektriek
+
+Weheat Insights is made available for free by Lektriek, an electrician who
+can also help you with other automation in your home: a smart home with
+Home Assistant, Shelly or HomeWizard that doesn't depend on the cloud,
+connecting a home battery, or a smart charge point that charges on cheap
+hours or solar power. See [lektriek.nl](https://lektriek.nl/).
 
 ## License
 
