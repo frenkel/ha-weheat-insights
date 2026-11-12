@@ -13,6 +13,7 @@ import voluptuous as vol
 
 from .const import DOMAIN
 from .degree_day_statistics import statistic_id as degree_day_statistic_id
+from .dhw import DEFAULT_DAYS as DHW_DEFAULT_DAYS, async_dhw
 from .discovery import WeheatKey
 from .history import MAX_COUNT, async_history
 from .house import async_supply_curve, curve_payload, heat_loss_payload
@@ -25,6 +26,7 @@ def async_register(hass: HomeAssistant) -> None:
     websocket_api.async_register_command(hass, ws_performance_history)
     websocket_api.async_register_command(hass, ws_heat_loss)
     websocket_api.async_register_command(hass, ws_supply_curve)
+    websocket_api.async_register_command(hass, ws_dhw)
 
 
 def _loaded_entry(hass: HomeAssistant, entry_id: str):
@@ -165,4 +167,29 @@ async def ws_supply_curve(
     curves = curve_payload(data.house.data) if data.house is not None else None
     connection.send_result(
         msg["id"], {"days": msg["days"], "points": points, "curves": curves}
+    )
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): f"{DOMAIN}/dhw",
+        vol.Required("entry_id"): str,
+        vol.Optional("days", default=DHW_DEFAULT_DAYS): vol.All(
+            int, vol.Range(min=7, max=365)
+        ),
+    }
+)
+@websocket_api.async_response
+async def ws_dhw(
+    hass: HomeAssistant,
+    connection: websocket_api.ActiveConnection,
+    msg: dict[str, Any],
+) -> None:
+    """Return the hot-water figures: per day, start hours and standing loss."""
+    entry = _loaded_entry(hass, msg["entry_id"])
+    if entry is None:
+        connection.send_error(msg["id"], "not_found", "Heat pump not set up")
+        return
+    connection.send_result(
+        msg["id"], await async_dhw(hass, entry.runtime_data, msg["days"])
     )
