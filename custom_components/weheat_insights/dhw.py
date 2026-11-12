@@ -17,7 +17,6 @@ from homeassistant.util import dt as dt_util
 
 from .calculations.dhw import (
     dhw_days,
-    run_targets,
     standing_loss,
     start_hours,
     weekly_median,
@@ -45,26 +44,6 @@ def local_periods(data: WeheatInsightsData, since: datetime) -> list[Period]:
         for p in (data.operating.periods if data.operating is not None else [])
         if p.end >= since
     ]
-
-
-async def async_targets(
-    hass: HomeAssistant,
-    data: WeheatInsightsData,
-    start: datetime,
-    end: datetime,
-    periods: list[Period],
-) -> dict[date, float]:
-    """Tank target per day from hot-water runs (legionella left out)."""
-    hourly = await async_series(
-        hass,
-        {"bottom": data.entities.get(WeheatKey.DHW_BOTTOM_TEMPERATURE, "")},
-        start,
-        end,
-        period="hour",
-        kind="max",
-        units={"temperature": UnitOfTemperature.CELSIUS},
-    )
-    return run_targets(hourly["bottom"], periods)
 
 
 async def async_dhw(
@@ -98,7 +77,15 @@ async def async_dhw(
     energy = await async_energy(hass, entities, first, today + timedelta(days=1))
 
     periods = local_periods(data, start)
-    targets = await async_targets(hass, data, start, end, periods)
+    heated_to = await async_series(
+        hass,
+        {"bottom": entities.get(WeheatKey.DHW_BOTTOM_TEMPERATURE, "")},
+        start,
+        end,
+        period="day",
+        kind="max",
+        units=celsius,
+    )
 
     def by_day(series: dict) -> dict[date, float]:
         return {moment.date(): value for moment, value in series.items()}
@@ -106,7 +93,7 @@ async def async_dhw(
     day_list = [first + timedelta(days=n) for n in range(days)]
     rows = dhw_days(
         day_list,
-        targets=targets,
+        targets=by_day(heated_to["bottom"]),
         energy=energy,
         outdoor_mean=by_day(outdoor["outdoor"]),
         periods=periods,

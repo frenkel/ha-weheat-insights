@@ -36,9 +36,9 @@ with one dot per day of heating against the indoor–outdoor difference.
     running hours per day (standby left out) as bar charts and defrosts next
     to degree days.
   - **Hot water** (when the pump has a hot-water tank): the temperature the
-    tank was heated to per day (the bottom temperature reached by ordinary
-    hot-water runs, legionella prevention left out), tank top and bottom over the last 48 hours, hot-water heat,
-    electricity and COP per day, COP against tank temperature and against
+    tank was heated to per day (the highest temperature of the bottom
+    sensor, next to the set target), tank top and bottom over the last 48
+    hours, hot-water heat and electricity per day, COP against tank temperature and against
     outdoor temperature, at what time of day the tank is heated, and the
     tank's standing loss per week.
   - **Live**: operating state, COP gauge (while running), room and target
@@ -300,22 +300,18 @@ before.
 
 ### Hot water
 
-- The **tank target** of a day is the highest temperature the bottom sensor
-  reached during ordinary hot-water runs: the heat pump stops heating the
-  tank once its bottom is at the target. Hours of legionella prevention (and
-  the hour after) are left out, whether it runs weekly or daily, so a tank
-  that is heated to 64 °C for legionella doesn't count as a 64 °C target.
-  The target is published as an external statistic
-  (`weheat_insights:dhw_target_…`) for the statistics graph; it needs the
-  operating periods, so it starts when Weheat Insights began following the
-  heat pump. Newer versions of the core integration also report the set target;
-  when they do, it is drawn as a second bar next to the reached temperature.
+- What the tank was **heated to** on a day is the highest temperature of the
+  bottom sensor: the heat pump stops heating the tank once its bottom is at
+  its target. On a legionella-prevention day that is the legionella
+  temperature. Newer versions of the core integration also report the set
+  target; when they do, its highest value of the day is drawn next to it.
 - **Hot-water COP per day** = hot-water heat ÷ hot-water electricity plus
   its share of defrost, once at least 0.25 kWh was used that day.
 - The **COP against tank temperature** and **against outdoor temperature**
   charts have one dot per day for the last 90 days, with a straight-line fit
-  through the days without legionella prevention: it shows what each degree
-  hotter in the tank, or colder outside, costs.
+  through the days without legionella prevention (through all days when it
+  runs almost daily): it shows what each degree hotter in the tank, or colder
+  outside, costs. Legionella days are drawn as hollow dots.
 - **Standing loss** is how fast the top of the tank cools at night
   (00:00–07:00) in hours without a hot-water run, the hour after one, or a
   sudden drop from tapping (more than 1 K in an hour), in K/h; one figure per

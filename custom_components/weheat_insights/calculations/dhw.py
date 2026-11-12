@@ -2,11 +2,10 @@
 
 Pure functions; the recorder and the operating tracker feed them.
 
-- The tank target is the highest temperature the BOTTOM sensor reaches
-  during an ordinary hot-water run: the heat pump stops charging once the
-  bottom of the tank reaches the target. Hours touched by legionella
-  prevention are left out, so a weekly (or daily) high-temperature run
-  does not count as the target.
+- What the tank was heated to on a day is the highest temperature of the
+  BOTTOM sensor: the heat pump stops charging once the bottom of the tank
+  reaches its target. On a legionella-prevention day that is the higher
+  legionella temperature, as it should be.
 - Standing loss is how fast the TOP of the tank cools at night while nothing
   is drawn and nothing is heated. A small hot-water draw also cools the top,
   so nights with a sudden drop are left out.
@@ -42,7 +41,7 @@ class DhwDay:
     """One day of hot water."""
 
     day: date
-    target_c: float | None  # bottom temperature reached by hot-water runs
+    target_c: float | None  # highest bottom temperature: heated to
     legionella: bool
     runs: int
     heat_kwh: float
@@ -99,37 +98,6 @@ def _hours(period: Period, after: timedelta = timedelta(0)) -> list[datetime]:
         hours.append(hour)
         hour += timedelta(hours=1)
     return hours
-
-
-def run_targets(
-    bottom_hourly_max: Mapping[datetime, float], periods: Iterable[Period]
-) -> dict[date, float]:
-    """Tank target per day: highest bottom temperature during hot-water runs.
-
-    Uses hourly maxima (local hour starts) in the hours of each ``dhw`` run.
-    Hours touched by legionella prevention, and the hour after it, are left
-    out: the tank is still hotter than its usual target then.
-    """
-    periods = list(periods)
-    legionella = {
-        hour
-        for period in periods
-        if period.group == "legionella"
-        for hour in _hours(period, timedelta(hours=1))
-    }
-    result: dict[date, float] = {}
-    for period in periods:
-        if period.group != "dhw":
-            continue
-        values = [
-            bottom_hourly_max[hour]
-            for hour in _hours(period)
-            if hour not in legionella and hour in bottom_hourly_max
-        ]
-        if values:
-            day = period.start.date()
-            result[day] = max(result.get(day, values[0]), *values)
-    return result
 
 
 def start_hours(periods: Iterable[Period], since: datetime) -> list[int]:

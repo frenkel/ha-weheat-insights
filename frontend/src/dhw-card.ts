@@ -321,10 +321,15 @@ export class WeheatInsightsDhwCard extends LitElement {
     const [y0, y1] = [yTicks[0], yTicks[yTicks.length - 1]];
     const sx = (v: number) => PAD.left + ((v - x0) / (x1 - x0)) * PLOT_W;
     const sy = (v: number) => PAD.top + PLOT_H - ((v - y0) / (y1 - y0)) * PLOT_H;
-    const color = (d: DhwDay) =>
-      against === "target"
-        ? outdoorColor(d.outdoor_c)
-        : `hsl(${(220 - 220 * Math.min(1, Math.max(0, ((d.target_c ?? 50) - 45) / 15))).toFixed(0)} 70% 50%)`;
+    // Tank temperature colours span this data: coolest day blue, hottest
+    // (legionella prevention) red.
+    const heated = days.map((d) => d.target_c).filter((v): v is number => v != null);
+    const [lo, hi] = [Math.min(...heated), Math.max(...heated)];
+    const tankColor = (v: number | null) =>
+      v == null
+        ? "var(--disabled-text-color, #9e9e9e)"
+        : `hsl(${(220 - 220 * (hi > lo ? (v - lo) / (hi - lo) : 0.5)).toFixed(0)} 70% 50%)`;
+    const color = (d: DhwDay) => (against === "target" ? outdoorColor(d.outdoor_c) : tankColor(d.target_c));
     const unit = "°C";
     const fitText = fit
       ? (against === "target" ? t("dhw_fit_target") : t("dhw_fit_outdoor")).replace(

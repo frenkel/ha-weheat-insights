@@ -3,11 +3,9 @@
 from datetime import date, datetime, timedelta
 from unittest.mock import MagicMock
 
-from homeassistant.components.recorder import get_instance
 from homeassistant.components.recorder.models import StatisticMeanType
 from homeassistant.components.recorder.statistics import (
     async_import_statistics,
-    statistics_during_period,
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
@@ -19,7 +17,6 @@ from pytest_homeassistant_custom_component.components.recorder.common import (
 
 from custom_components.weheat_insights.calculations.dhw import (
     dhw_days,
-    run_targets,
     standing_loss,
     start_hours,
     weekly_median,
@@ -66,32 +63,6 @@ def test_dhw_days_combine_target_runs_and_cop() -> None:
     assert rows[1].runs == 0
     assert rows[1].cop is None  # no DHW electricity
     assert rows[1].outdoor_c is None
-
-
-def test_run_targets_leave_legionella_out() -> None:
-    bottom = {_at(2, 7): 53.0, _at(2, 8): 50.0, _at(3, 6): 52.0}
-    bottom |= {_at(3, 13): 58.0, _at(3, 14): 64.0, _at(3, 15): 63.0}
-    periods = [
-        Period("dhw", _at(2, 7, 5), _at(2, 7, 55)),
-        Period("dhw", _at(3, 6, 10), _at(3, 6, 50)),
-        Period("legionella", _at(3, 13), _at(3, 14, 30)),
-        # A short run right after legionella: the tank is still hot.
-        Period("dhw", _at(3, 15, 10), _at(3, 15, 30)),
-    ]
-    targets = run_targets(bottom, periods)
-    assert targets == {date(2026, 11, 2): 53.0, date(2026, 11, 3): 52.0}
-
-
-def test_run_targets_with_a_hot_tank_every_day() -> None:
-    # Heated to 64 °C by ordinary runs every day: that is the target.
-    bottom = {_at(day, 6): 64.0 for day in (2, 3, 4)}
-    periods = [Period("dhw", _at(day, 6), _at(day, 6, 50)) for day in (2, 3, 4)]
-    assert set(run_targets(bottom, periods).values()) == {64.0}
-    # Legionella prevention every day besides 50 °C runs: still 50.
-    bottom |= {_at(day, 14): 64.0 for day in (2, 3, 4)}
-    bottom |= {_at(day, 6): 50.0 for day in (2, 3, 4)}
-    periods += [Period("legionella", _at(d, 14), _at(d, 14, 40)) for d in (2, 3, 4)]
-    assert set(run_targets(bottom, periods).values()) == {50.0}
 
 
 def test_start_hours_count_tank_runs_since() -> None:
@@ -215,27 +186,11 @@ async def test_websocket_dhw(hass: HomeAssistant, freezer) -> None:
     days = {row["day"]: row for row in result["days"]}
     assert len(result["days"]) == 7
     assert days["2026-11-09"]["target_c"] == 53.0
-    assert days["2026-11-10"]["target_c"] == 52.0  # legionella left out
+    assert days["2026-11-10"]["target_c"] == 62.0  # legionella prevention
     assert days["2026-11-10"]["legionella"] is True
     assert days["2026-11-11"]["target_c"] is None
     assert len(result["start_hours"]) == 24
-    assert result["summary"]["target_typical_c"] == 52.5
-
-    # The same targets as an external statistic, for the statistics graph.
-    stats = entry.runtime_data.coordinator.dhw_target_statistics
-    await stats.async_update(date(2026, 11, 11), entry.runtime_data)
-    await async_wait_recording_done(hass)
-    rows = await get_instance(hass).async_add_executor_job(
-        statistics_during_period,
-        hass,
-        start,
-        start + timedelta(days=3),
-        {stats.statistic_id},
-        "day",
-        None,
-        {"mean"},
-    )
-    assert [r["mean"] for r in rows[stats.statistic_id]] == [53.0, 52.0]
+    assert result["summary"]["target_typical_c"] == 57.5
 
     connection = MagicMock()
     ws_dhw(hass, connection, {"id": 2, "type": "x", "entry_id": "nope", "days": 7})

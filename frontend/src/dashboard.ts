@@ -489,7 +489,7 @@ export function hotWaterView(pump: HeatPumpConfig, t: Localize, index: number): 
   );
   // 14 days: more bars that go up and down are hard to read.
   const tankTargets = present([
-    entity(pump.dhw_target_statistic_id, t("dhw_target_reached")),
+    entity(w.dhw_bottom_temperature, t("dhw_bottom")),
     entity(w.dhw_target_temperature, t("dhw_setpoint")),
   ]);
   const perDay = section(
@@ -502,10 +502,9 @@ export function hotWaterView(pump: HeatPumpConfig, t: Localize, index: number): 
             entities: tankTargets,
             period: "day",
             days_to_show: 14,
-            // Our target statistic has one value per day (min = max). The set
-            // target is raised during legionella prevention, so its lowest
-            // value of the day is the ordinary target.
-            stat_types: ["min"],
+            // What the tank was heated to: the day's highest bottom temperature,
+            // legionella prevention included (the set target rises with it).
+            stat_types: ["max"],
             chart_type: "bar",
             // From 0 the differences of a degree or two disappear.
             fit_y_data: true,

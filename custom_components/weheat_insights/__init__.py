@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from homeassistant.components.recorder import get_instance
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import CALLBACK_TYPE, Event, HomeAssistant, callback
@@ -96,6 +97,11 @@ async def async_setup_entry(
         entry.runtime_data.operating = tracker
 
     entry.async_on_unload(_async_watch_weheat_entities(hass, entry, uuid))
+    # 0.8.0 published the hot-water tank target as an external statistic;
+    # the chart now uses the tank sensor's own statistics.
+    get_instance(hass).async_clear_statistics(
+        [f"{DOMAIN}:dhw_target_{uuid.replace('-', '_').lower()}"]
+    )
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
