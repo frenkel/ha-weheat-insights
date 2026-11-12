@@ -11,6 +11,7 @@ import { localizer } from "./localize";
 import { PERFORMANCE_CARD_TAG, WeheatInsightsPerformanceCard } from "./performance-card";
 import { OPERATING_CARD_TAG, WeheatInsightsOperatingCard } from "./operating-card";
 import { SCATTER_CARD_TAG, WeheatInsightsScatterCard } from "./scatter-card";
+import { DHW_CARD_TAG, WeheatInsightsDhwCard } from "./dhw-card";
 import type { DashboardConfigResponse, HomeAssistant, LovelaceConfig } from "./types";
 
 const STRATEGY_TAG = "ll-strategy-dashboard-weheat-insights";
@@ -46,6 +47,10 @@ if (!customElements.get(SCATTER_CARD_TAG)) {
   customElements.define(SCATTER_CARD_TAG, WeheatInsightsScatterCard);
 }
 
+if (!customElements.get(DHW_CARD_TAG)) {
+  customElements.define(DHW_CARD_TAG, WeheatInsightsDhwCard);
+}
+
 declare global {
   interface Window {
     customStrategies?: { type: string; name: string; description: string; strategyType?: string }[];
@@ -75,6 +80,14 @@ if (!window.customCards.some((c) => c.type === OPERATING_CARD_TAG)) {
     type: OPERATING_CARD_TAG,
     name: "Weheat Insights operation",
     description: "Time per operating state and number and length of periods (unofficial)",
+  });
+}
+
+if (!window.customCards.some((c) => c.type === DHW_CARD_TAG)) {
+  window.customCards.push({
+    type: DHW_CARD_TAG,
+    name: "Weheat Insights hot water",
+    description: "Hot-water tank temperature, COP, run times and standing loss (unofficial)",
   });
 }
 

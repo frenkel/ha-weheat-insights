@@ -6,6 +6,7 @@
  * "entity not found" cards, because the core Weheat integration only
  * creates sensors that the heat pump actually reports.
  */
+import { DHW_CARD_TAG } from "./dhw-card";
 import type { Localize } from "./localize";
 import { PERFORMANCE_CARD_TAG } from "./performance-card";
 import { OPERATING_CARD_TAG, OPERATING_STATES } from "./operating-card";
@@ -68,7 +69,10 @@ function section(
 }
 
 /** The "Weheat Insights" explanation at the bottom of a tab, two columns wide. */
-function aboutSection(t: Localize, key: "definitions" | "house_definitions" | "curve_definitions" | "op_definitions") {
+function aboutSection(
+  t: Localize,
+  key: "definitions" | "house_definitions" | "curve_definitions" | "op_definitions" | "dhw_definitions",
+) {
   return section(
     [heading(t("title"), "mdi:information-outline"), {
       type: "markdown",
@@ -461,6 +465,50 @@ export function operationView(pump: HeatPumpConfig, t: Localize, index: number):
   };
 }
 
+export function hotWaterView(pump: HeatPumpConfig, t: Localize, index: number): LovelaceViewConfig | null {
+  const w = pump.weheat;
+  if (!pump.has_dhw) return null;
+  const dhw = (mode: string, extra: Record<string, unknown> = {}): LovelaceCardConfig => ({
+    type: `custom:${DHW_CARD_TAG}`,
+    entry_id: pump.entry_id,
+    mode,
+    ...extra,
+  });
+  const tank = section(
+    [
+      heading(t("hot_water_tab"), "mdi:water-boiler"),
+      dhw("summary"),
+      // 48 hours: a week of heating and tapping is too busy to read.
+      historyGraph(
+        t("dhw_tank_48h"),
+        present([entity(w.dhw_top_temperature, t("dhw_top")), entity(w.dhw_bottom_temperature, t("dhw_bottom"))]),
+        48,
+      ),
+    ],
+    2,
+  );
+  const perDay = section(
+    [heading(t("dhw_per_day"), "mdi:calendar-today"), dhw("target", { days: 14 }), dhw("energy", { days: 14 })],
+    2,
+  );
+  const efficiency = section(
+    [heading(t("dhw_efficiency"), "mdi:gauge"), dhw("cop_target", { days: 90 }), dhw("cop_outdoor", { days: 90 })],
+    2,
+  );
+  const habits = section(
+    [heading(t("dhw_habits"), "mdi:clock-outline"), dhw("start_hours"), dhw("standing_loss")],
+    2,
+  );
+  return {
+    title: `${pump.name} · ${t("hot_water_tab")}`,
+    path: index === 0 ? "hot-water" : `hot-water-${index + 1}`,
+    icon: "mdi:water-boiler",
+    type: "sections",
+    max_columns: 4,
+    sections: present([tank, perDay, efficiency, habits, aboutSection(t, "dhw_definitions")]),
+  };
+}
+
 function messageView(t: Localize, title: string, body: string): LovelaceViewConfig {
   return {
     title: t("title"),
@@ -477,13 +525,16 @@ export function generateDashboard(pumps: HeatPumpConfig[], t: Localize): Lovelac
   return {
     title: t("title"),
     // Performance first: it is the default tab; live status second.
-    views: pumps.flatMap((pump, index) => [
-      performanceView(pump, t, index),
-      houseView(pump, t, index),
-      curveView(pump, t, index),
-      operationView(pump, t, index),
-      pumpView(pump, t, index),
-    ]),
+    views: pumps.flatMap((pump, index) =>
+      present([
+        performanceView(pump, t, index),
+        houseView(pump, t, index),
+        curveView(pump, t, index),
+        operationView(pump, t, index),
+        hotWaterView(pump, t, index),
+        pumpView(pump, t, index),
+      ]),
+    ),
   };
 }
 

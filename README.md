@@ -35,6 +35,12 @@ with one dot per day of heating against the indoor–outdoor difference.
     of periods today / 7 / 30 days and their average length, with periods and
     running hours per day (standby left out) as bar charts and defrosts next
     to degree days.
+  - **Hot water** (when the pump has a hot-water tank): the temperature the
+    tank was heated to per day (the highest temperature of the bottom
+    sensor), tank top and bottom over the last 48 hours, hot-water heat,
+    electricity and COP per day, COP against tank temperature and against
+    outdoor temperature, at what time of day the tank is heated, and the
+    tank's standing loss per week.
   - **Live**: operating state, COP gauge (while running), room and target
     temperature, outdoor, supply and return temperatures, ΔT, electrical
     power and heat output,
@@ -52,7 +58,7 @@ with one dot per day of heating against the indoor–outdoor difference.
     degree day before and after a curve change.
   - Per operating state: periods today (with statistics for 7 and 30 days)
     and running totals of periods and hours.
-- Four custom cards you can also use on your own dashboards (see below).
+- Five custom cards you can also use on your own dashboards (see below).
 - Works from day one with your existing history: everything is computed from
   Home Assistant's long-term statistics of the core Weheat energy counters.
 - Works with multiple heat pumps. English and Dutch.
@@ -139,7 +145,7 @@ real and are kept on purpose.
 
 ### Cards for your own dashboards
 
-The dashboard uses four cards that you can also add to any other dashboard.
+The dashboard uses five cards that you can also add to any other dashboard.
 You find the `entry_id` by opening **Settings → Devices & services → Weheat
 Insights**: the address bar then ends in `#config_entry=<entry_id>`.
 
@@ -160,6 +166,13 @@ type: custom:weheat-insights-scatter-card
 entry_id: <entry_id>
 mode: supply_curve
 days: 365
+
+# Hot water: summary, target, energy, cop_target, cop_outdoor,
+# start_hours or standing_loss; days sets how many days a chart shows
+type: custom:weheat-insights-dhw-card
+entry_id: <entry_id>
+mode: target
+days: 14
 
 # Time per operating state and number and length of periods
 # (the operating sensors of the "Weheat Insights" device)
@@ -284,6 +297,28 @@ The core integration reports the state every two minutes, so lengths are
 accurate to about two minutes and a very short defrost can be missed. Time
 while Home Assistant was not running is counted in the state it was in
 before.
+
+### Hot water
+
+- The **tank target** of a day is the highest temperature the bottom sensor
+  reached: the heat pump stops heating the tank once its bottom is at the
+  target. Newer versions of the core integration also report the set target;
+  when they do, it is drawn as a marker on the bars.
+- **Hot-water COP per day** = hot-water heat ÷ hot-water electricity plus
+  its share of defrost, once at least 0.25 kWh was used that day.
+- The **COP against tank temperature** and **against outdoor temperature**
+  charts have one dot per day for the last 90 days, with a straight-line fit
+  through the days without legionella prevention: it shows what each degree
+  hotter in the tank, or colder outside, costs.
+- **Standing loss** is how fast the top of the tank cools at night
+  (00:00–07:00) in hours without a hot-water run, the hour after one, or a
+  sudden drop from tapping (more than 1 K in an hour), in K/h; one figure per
+  night and the median per week. It depends on the tank and on the room it
+  stands in.
+- Bar charts show 14 days and the weekly chart 12 weeks: more bars that go
+  up and down are hard to read.
+- Tank temperatures only have history since the core Weheat integration was
+  added to Home Assistant.
 
 ### Long-term statistics
 
