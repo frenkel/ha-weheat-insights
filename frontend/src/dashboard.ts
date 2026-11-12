@@ -502,9 +502,10 @@ export function hotWaterView(pump: HeatPumpConfig, t: Localize, index: number): 
             entities: tankTargets,
             period: "day",
             days_to_show: 14,
-            // The target statistic has one value per day (mean = max); for the
-            // set target the day's highest value is what counts.
-            stat_types: ["max"],
+            // Our target statistic has one value per day (min = max). The set
+            // target is raised during legionella prevention, so its lowest
+            // value of the day is the ordinary target.
+            stat_types: ["min"],
             chart_type: "bar",
             // From 0 the differences of a degree or two disappear.
             fit_y_data: true,
