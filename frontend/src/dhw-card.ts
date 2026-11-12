@@ -3,15 +3,13 @@
  *
  * Modes:
  *  - summary:       key figures of the last 30 days
- *  - target:        temperature the tank was heated to, per day
- *  - energy:        hot-water heat and electricity per day, with the COP
  *  - cop_target:    COP per day against the tank temperature
  *  - cop_outdoor:   COP per day against the outdoor temperature
  *  - start_hours:   at what time of day the tank is heated
  *  - standing_loss: how fast the tank cools at night, per week
  *
- * Bar charts show few days on purpose (default 14): more bars that go up
- * and down are hard to read.
+ * The tank temperature and energy per day are Home Assistant's own
+ * statistics graphs; these charts are for figures without a statistic.
  */
 import { LitElement, css, html, svg, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { language, localizer, type Localize } from "./localize";
@@ -20,14 +18,12 @@ import type { HomeAssistant } from "./types";
 
 export const DHW_CARD_TAG = "weheat-insights-dhw-card";
 
-const MODES = ["summary", "target", "energy", "cop_target", "cop_outdoor", "start_hours", "standing_loss"] as const;
+const MODES = ["summary", "cop_target", "cop_outdoor", "start_hours", "standing_loss"] as const;
 type Mode = (typeof MODES)[number];
 
 interface DhwDay {
   day: string;
   target_c: number | null;
-  top_max_c: number | null;
-  setpoint_c: number | null;
   legionella: boolean;
   runs: number;
   heat_kwh: number;
@@ -57,7 +53,7 @@ export interface DhwCardConfig {
   type: string;
   entry_id: string;
   mode: Mode;
-  /** Days shown in a per-day bar chart (default 14) or a scatter (default 90). */
+  /** Days shown in a scatter chart (default 90). */
   days?: number;
   title?: string;
 }
@@ -98,12 +94,8 @@ interface Bar {
   label: string;
   value: number | null;
   cls?: string;
-  /** Second, narrower bar drawn inside this one. */
-  inner?: number | null;
   /** Text above the bar. */
   note?: string;
-  /** Short horizontal marker (for example a set point). */
-  marker?: number | null;
   tip: string;
 }
 
@@ -191,9 +183,9 @@ export class WeheatInsightsDhwCard extends LitElement {
     });
   }
 
-  private _dayLabel(day: string, weekday = true): string {
+  private _dayLabel(day: string): string {
     const date = new Date(`${day}T12:00:00`);
-    return date.toLocaleDateString(language(this.hass!), weekday ? { weekday: "short", day: "numeric" } : { day: "numeric", month: "short" });
+    return date.toLocaleDateString(language(this.hass!), { day: "numeric", month: "short" });
   }
 
   private _recent(data: DhwResponse, fallback: number): DhwDay[] {
@@ -204,10 +196,6 @@ export class WeheatInsightsDhwCard extends LitElement {
     switch (mode) {
       case "summary":
         return this._renderSummary(data, t);
-      case "target":
-        return this._renderTarget(data, t);
-      case "energy":
-        return this._renderEnergy(data, t);
       case "cop_target":
         return this._renderCopScatter(data, t, "target");
       case "cop_outdoor":
@@ -249,49 +237,6 @@ export class WeheatInsightsDhwCard extends LitElement {
 
   // -- per-day bars -----------------------------------------------------------
 
-  private _renderTarget(data: DhwResponse, t: Localize) {
-    const days = this._recent(data, 14);
-    const f = this._fmt(0);
-    const bars: Bar[] = days.map((d) => ({
-      label: this._dayLabel(d.day),
-      value: d.target_c,
-      cls: d.legionella ? "legionella" : "target",
-      note: d.target_c == null ? "" : f.format(d.target_c),
-      marker: d.setpoint_c,
-      tip: `${d.day}: ${d.target_c == null ? "—" : `${f.format(d.target_c)} °C`}${d.legionella ? ` (${t("legionella")})` : ""}`,
-    }));
-    const values = days.map((d) => d.target_c).filter((v): v is number => v != null);
-    if (!values.length) return html`<div class="message">${t("no_data")}</div>`;
-    // Start the axis below the lowest bar: from 0 the differences disappear.
-    const low = Math.floor((Math.min(...values) - 6) / 5) * 5;
-    const hasSetpoint = days.some((d) => d.setpoint_c != null);
-    return html`${this._bars(bars, { min: Math.max(0, low), unit: "°C" })}
-      <div class="legend">
-        <span><i class="swatch target"></i>${t("dhw_tank_temperature")}</span>
-        ${days.some((d) => d.legionella) ? html`<span><i class="swatch legionella"></i>${t("legionella")}</span>` : nothing}
-        ${hasSetpoint ? html`<span><i class="tick"></i>${t("dhw_setpoint")}</span>` : nothing}
-      </div>`;
-  }
-
-  private _renderEnergy(data: DhwResponse, t: Localize) {
-    const days = this._recent(data, 14);
-    const f1 = this._fmt(1);
-    const bars: Bar[] = days.map((d) => ({
-      label: this._dayLabel(d.day),
-      value: d.heat_kwh,
-      inner: d.electricity_kwh,
-      cls: "heat",
-      note: d.cop == null ? "" : f1.format(d.cop),
-      tip: `${d.day}: ${f1.format(d.heat_kwh)} kWh ${t("dhw_heat").toLowerCase()}, ${f1.format(d.electricity_kwh)} kWh ${t("dhw_electricity").toLowerCase()}${d.cop == null ? "" : `, COP ${f1.format(d.cop)}`}`,
-    }));
-    return html`${this._bars(bars, { min: 0, unit: "kWh" })}
-      <div class="legend">
-        <span><i class="swatch heat"></i>${t("dhw_heat")}</span>
-        <span><i class="swatch electricity"></i>${t("dhw_electricity")}</span>
-        <span>${t("dhw_numbers_cop")}</span>
-      </div>`;
-  }
-
   private _renderStartHours(data: DhwResponse, t: Localize) {
     const bars: Bar[] = data.start_hours.map((count, hour) => ({
       label: hour % 3 === 0 ? String(hour) : "",
@@ -309,7 +254,7 @@ export class WeheatInsightsDhwCard extends LitElement {
     if (!weeks.length) return html`<div class="message">${t("dhw_standing_loss_none")}</div>`;
     const f = this._fmt(2);
     const bars: Bar[] = weeks.map((w) => ({
-      label: this._dayLabel(w.week, false),
+      label: this._dayLabel(w.week),
       value: w.k_per_h,
       cls: "loss",
       note: f.format(w.k_per_h),
@@ -320,7 +265,7 @@ export class WeheatInsightsDhwCard extends LitElement {
   }
 
   private _bars(bars: Bar[], opts: { min: number; unit: string; integer?: boolean }): TemplateResult {
-    const tops = bars.flatMap((b) => [b.value ?? opts.min, b.marker ?? opts.min]);
+    const tops = bars.map((b) => b.value ?? opts.min);
     let ticks = niceTicks(opts.min, Math.max(opts.min + (opts.integer ? 3 : 1), ...tops), 5);
     if (opts.integer) ticks = ticks.filter((v) => Number.isInteger(v));
     const [y0, y1] = [ticks[0], ticks[ticks.length - 1]];
@@ -340,19 +285,11 @@ export class WeheatInsightsDhwCard extends LitElement {
           b.value == null
             ? nothing
             : svg`<rect class="bar ${b.cls ?? ""}" x=${cx - width / 2} y=${sy(b.value)} width=${width} height=${Math.max(0, sy(y0) - sy(b.value))} rx="2"><title>${b.tip}</title></rect>`;
-        const inner =
-          b.inner == null || b.inner <= 0
-            ? nothing
-            : svg`<rect class="bar electricity" x=${cx - width / 4} y=${sy(b.inner)} width=${width / 2} height=${Math.max(0, sy(y0) - sy(b.inner))} rx="1"><title>${b.tip}</title></rect>`;
-        const marker =
-          b.marker == null
-            ? nothing
-            : svg`<line class="marker" x1=${cx - width / 2 - 3} x2=${cx + width / 2 + 3} y1=${sy(b.marker)} y2=${sy(b.marker)}></line>`;
         const note =
           b.note && b.value != null
             ? svg`<text class="note-text" x=${cx} y=${sy(b.value) - 4} text-anchor="middle">${b.note}</text>`
             : nothing;
-        return svg`${bar}${inner}${marker}${note}
+        return svg`${bar}${note}
           <text class="axis" x=${cx} y=${PAD.top + PLOT_H + 16} text-anchor="middle">${b.label}</text>`;
       })}
     </svg>`;
@@ -369,7 +306,10 @@ export class WeheatInsightsDhwCard extends LitElement {
       y: d.cop as number,
       d,
     }));
-    const clean = points.filter((p) => !p.d.legionella);
+    // Days with legionella prevention cost more; leave them out of the fit,
+    // unless it runs (almost) every day: then those days are the normal case.
+    const withoutLegionella = points.filter((p) => !p.d.legionella);
+    const clean = withoutLegionella.length >= 8 ? withoutLegionella : points;
     const fit = linearFit(clean);
     // Draw the fit only where its days are, not out to the legionella days.
     const fitFrom = Math.min(...clean.map((p) => p.x));
@@ -465,33 +405,11 @@ export class WeheatInsightsDhwCard extends LitElement {
       fill: var(--primary-text-color);
       font-size: 11px;
     }
-    rect.bar.target,
-    .swatch.target {
+    rect.bar.target {
       fill: var(--blue-color, #2196f3);
-      background: var(--blue-color, #2196f3);
-    }
-    rect.bar.legionella,
-    .swatch.legionella {
-      fill: var(--purple-color, #9c27b0);
-      background: var(--purple-color, #9c27b0);
-    }
-    rect.bar.heat,
-    .swatch.heat {
-      fill: var(--orange-color, #ff9800);
-      background: var(--orange-color, #ff9800);
-      fill-opacity: 0.55;
-    }
-    rect.bar.electricity,
-    .swatch.electricity {
-      fill: var(--blue-color, #2196f3);
-      background: var(--blue-color, #2196f3);
     }
     rect.bar.loss {
       fill: var(--teal-color, #009688);
-    }
-    line.marker {
-      stroke: var(--primary-text-color);
-      stroke-width: 2;
     }
     line.fit {
       stroke: var(--primary-text-color);
@@ -514,22 +432,6 @@ export class WeheatInsightsDhwCard extends LitElement {
       font-size: 13px;
       color: var(--secondary-text-color);
       margin-top: 4px;
-    }
-    .swatch {
-      display: inline-block;
-      width: 12px;
-      height: 12px;
-      border-radius: 2px;
-      margin-right: 6px;
-      vertical-align: middle;
-    }
-    .tick {
-      display: inline-block;
-      width: 14px;
-      height: 2px;
-      background: var(--primary-text-color);
-      margin-right: 6px;
-      vertical-align: middle;
     }
     .ring {
       display: inline-block;

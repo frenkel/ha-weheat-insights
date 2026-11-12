@@ -487,8 +487,37 @@ export function hotWaterView(pump: HeatPumpConfig, t: Localize, index: number): 
     ],
     2,
   );
+  // 14 days: more bars that go up and down are hard to read.
+  const tankTargets = present([
+    entity(pump.dhw_target_statistic_id, t("dhw_target_reached")),
+    entity(w.dhw_target_temperature, t("dhw_setpoint")),
+  ]);
   const perDay = section(
-    [heading(t("dhw_per_day"), "mdi:calendar-today"), dhw("target", { days: 14 }), dhw("energy", { days: 14 })],
+    [
+      heading(t("dhw_per_day"), "mdi:calendar-today"),
+      tankTargets.length
+        ? {
+            type: "statistics-graph",
+            title: t("dhw_target_title"),
+            entities: tankTargets,
+            period: "day",
+            days_to_show: 14,
+            // The target statistic has one value per day (mean = max); for the
+            // set target the day's highest value is what counts.
+            stat_types: ["max"],
+            chart_type: "bar",
+            // From 0 the differences of a degree or two disappear.
+            fit_y_data: true,
+            grid_options: { columns: "full" },
+          }
+        : null,
+      changeBars(
+        t("dhw_energy_title"),
+        present([entity(w.energy_output_dhw, t("dhw_heat")), entity(w.electricity_used_dhw, t("dhw_electricity"))]),
+        "day",
+        14,
+      ),
+    ],
     2,
   );
   const efficiency = section(

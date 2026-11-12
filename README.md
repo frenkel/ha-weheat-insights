@@ -36,8 +36,8 @@ with one dot per day of heating against the indoor–outdoor difference.
     running hours per day (standby left out) as bar charts and defrosts next
     to degree days.
   - **Hot water** (when the pump has a hot-water tank): the temperature the
-    tank was heated to per day (the highest temperature of the bottom
-    sensor), tank top and bottom over the last 48 hours, hot-water heat,
+    tank was heated to per day (the bottom temperature reached by ordinary
+    hot-water runs, legionella prevention left out), tank top and bottom over the last 48 hours, hot-water heat,
     electricity and COP per day, COP against tank temperature and against
     outdoor temperature, at what time of day the tank is heated, and the
     tank's standing loss per week.
@@ -167,12 +167,12 @@ entry_id: <entry_id>
 mode: supply_curve
 days: 365
 
-# Hot water: summary, target, energy, cop_target, cop_outdoor,
-# start_hours or standing_loss; days sets how many days a chart shows
+# Hot water: summary, cop_target, cop_outdoor, start_hours or
+# standing_loss; days sets how many days a scatter chart shows
 type: custom:weheat-insights-dhw-card
 entry_id: <entry_id>
-mode: target
-days: 14
+mode: cop_target
+days: 90
 
 # Time per operating state and number and length of periods
 # (the operating sensors of the "Weheat Insights" device)
@@ -301,9 +301,15 @@ before.
 ### Hot water
 
 - The **tank target** of a day is the highest temperature the bottom sensor
-  reached: the heat pump stops heating the tank once its bottom is at the
-  target. Newer versions of the core integration also report the set target;
-  when they do, it is drawn as a marker on the bars.
+  reached during ordinary hot-water runs: the heat pump stops heating the
+  tank once its bottom is at the target. Hours of legionella prevention (and
+  the hour after) are left out, whether it runs weekly or daily, so a tank
+  that is heated to 64 °C for legionella doesn't count as a 64 °C target.
+  The target is published as an external statistic
+  (`weheat_insights:dhw_target_…`) for the statistics graph; it needs the
+  operating periods, so it starts when Weheat Insights began following the
+  heat pump. Newer versions of the core integration also report the set target;
+  when they do, it is drawn as a second bar next to the reached temperature.
 - **Hot-water COP per day** = hot-water heat ÷ hot-water electricity plus
   its share of defrost, once at least 0.25 kWh was used that day.
 - The **COP against tank temperature** and **against outdoor temperature**
@@ -315,8 +321,9 @@ before.
   sudden drop from tapping (more than 1 K in an hour), in K/h; one figure per
   night and the median per week. It depends on the tank and on the room it
   stands in.
-- Bar charts show 14 days and the weekly chart 12 weeks: more bars that go
-  up and down are hard to read.
+- The tank temperature and the energy per day are Home Assistant's own
+  statistics graphs over 14 days; the standing-loss chart shows 12 weeks:
+  more bars that go up and down are hard to read.
 - Tank temperatures only have history since the core Weheat integration was
   added to Home Assistant.
 

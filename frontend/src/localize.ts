@@ -152,12 +152,12 @@ const en = {
   dhw_heat_per_run: "Heat per run",
   dhw_heat_per_day: "Heat per day",
   dhw_standing_loss: "Standing loss",
-  dhw_summary_note: "Averages over the last {days} complete days; the tank target is the highest temperature of the bottom sensor.",
+  dhw_summary_note: "Averages over the last {days} complete days; the tank target is the bottom temperature reached by ordinary hot-water runs (legionella prevention left out).",
   dhw_tank_temperature: "Tank temperature",
   dhw_setpoint: "Set target",
+  dhw_target_reached: "Reached at the bottom",
   dhw_heat: "Heat",
   dhw_electricity: "Electricity",
-  dhw_numbers_cop: "number = COP",
   dhw_start_hours_note: "Hot-water runs and legionella prevention over the last {days} days, by the hour they started.",
   dhw_standing_loss_none: "No quiet nights measured yet: this needs a few nights without hot-water use or heating of the tank.",
   dhw_week_of: "Week of",
@@ -166,7 +166,7 @@ const en = {
   dhw_fit_outdoor: "Each °C warmer outside changes the COP by {value} (dashed line).",
   dhw_color_outdoor: "colour: outdoor cold → warm",
   dhw_color_target: "colour: tank cooler → hotter",
-  dhw_definitions: "**How hot water is measured.** The *tank target* of a day is the highest temperature the *bottom* sensor reached: the heat pump stops heating once the bottom of the tank is at its target. Legionella prevention heats the tank much further once in a while; those days are purple, and hollow in the scatter charts. *COP* is hot-water heat divided by hot-water electricity plus its share of defrost, per day once at least 0.25 kWh was used. The dashed lines are straight-line fits through the days without legionella prevention. *Standing loss* is how fast the *top* of the tank cools at night (00:00–07:00) in hours without a run, an hour after a run, or a sudden drop from tapping; it depends on the tank and on the room it stands in. Tank temperatures have history only since the Weheat integration was added to Home Assistant.",
+  dhw_definitions: "**How hot water is measured.** The *tank target* of a day is the highest temperature the *bottom* sensor reached during ordinary hot-water runs: the heat pump stops heating once the bottom of the tank is at its target. Legionella prevention heats the tank further, weekly or even daily; those hours are left out of the target, and its days are hollow in the scatter charts. The target needs the operating periods Weheat Insights keeps, so it starts when it began following the heat pump. *COP* is hot-water heat divided by hot-water electricity plus its share of defrost, per day once at least 0.25 kWh was used. The dashed lines are straight-line fits through the days without legionella prevention. *Standing loss* is how fast the *top* of the tank cools at night (00:00–07:00) in hours without a run, an hour after a run, or a sudden drop from tapping; it depends on the tank and on the room it stands in. Tank temperatures have history only since the Weheat integration was added to Home Assistant.",
 };
 
 type Key = keyof typeof en;
@@ -323,12 +323,12 @@ const nl: Record<Key, string> = {
   dhw_heat_per_run: "Warmte per run",
   dhw_heat_per_day: "Warmte per dag",
   dhw_standing_loss: "Stilstandsverlies",
-  dhw_summary_note: "Gemiddelden over de laatste {days} volledige dagen; de doeltemperatuur is de hoogste temperatuur van de onderste sensor.",
+  dhw_summary_note: "Gemiddelden over de laatste {days} volledige dagen; de doeltemperatuur is de temperatuur die de onderste sensor haalt bij gewone warmwaterruns (legionellapreventie niet meegeteld).",
   dhw_tank_temperature: "Boilertemperatuur",
   dhw_setpoint: "Ingestelde doeltemperatuur",
+  dhw_target_reached: "Bereikt onderin",
   dhw_heat: "Warmte",
   dhw_electricity: "Stroom",
-  dhw_numbers_cop: "getal = COP",
   dhw_start_hours_note: "Warmwaterruns en legionellapreventie van de laatste {days} dagen, naar het uur waarin ze begonnen.",
   dhw_standing_loss_none: "Nog geen rustige nachten gemeten: daarvoor zijn een paar nachten nodig zonder warmwatergebruik of opwarmen van de boiler.",
   dhw_week_of: "Week van",
@@ -337,7 +337,7 @@ const nl: Record<Key, string> = {
   dhw_fit_outdoor: "Elke °C warmer buiten verandert de COP met {value} (stippellijn).",
   dhw_color_outdoor: "kleur: buiten koud → warm",
   dhw_color_target: "kleur: boiler koeler → heter",
-  dhw_definitions: "**Zo wordt warm water gemeten.** De *doeltemperatuur* van een dag is de hoogste temperatuur die de *onderste* sensor haalde: de warmtepomp stopt met opwarmen zodra de onderkant van de boiler op temperatuur is. Legionellapreventie warmt de boiler af en toe veel verder op; die dagen zijn paars, en open rondjes in de puntgrafieken. De *COP* is warmwaterwarmte gedeeld door warmwaterstroom plus het deel van het ontdooien, per dag zodra er minstens 0,25 kWh is gebruikt. De stippellijnen zijn rechte lijnen door de dagen zonder legionellapreventie. *Stilstandsverlies* is hoe snel de *bovenkant* van de boiler 's nachts (00:00–07:00) afkoelt, in uren zonder run, zonder het uur na een run en zonder plotselinge daling door tappen; het hangt af van de boiler en van de ruimte waarin hij staat. Boilertemperaturen hebben pas geschiedenis sinds de Weheat-integratie aan Home Assistant is toegevoegd.",
+  dhw_definitions: "**Zo wordt warm water gemeten.** De *doeltemperatuur* van een dag is de hoogste temperatuur die de *onderste* sensor haalde tijdens gewone warmwaterruns: de warmtepomp stopt met opwarmen zodra de onderkant van de boiler op temperatuur is. Legionellapreventie warmt de boiler verder op, wekelijks of zelfs dagelijks; die uren tellen niet mee voor de doeltemperatuur, en die dagen zijn open rondjes in de puntgrafieken. De doeltemperatuur heeft de bedrijfsperiodes nodig die Weheat Insights bijhoudt, dus begint pas vanaf het moment dat het de warmtepomp volgt. De *COP* is warmwaterwarmte gedeeld door warmwaterstroom plus het deel van het ontdooien, per dag zodra er minstens 0,25 kWh is gebruikt. De stippellijnen zijn rechte lijnen door de dagen zonder legionellapreventie. *Stilstandsverlies* is hoe snel de *bovenkant* van de boiler 's nachts (00:00–07:00) afkoelt, in uren zonder run, zonder het uur na een run en zonder plotselinge daling door tappen; het hangt af van de boiler en van de ruimte waarin hij staat. Boilertemperaturen hebben pas geschiedenis sinds de Weheat-integratie aan Home Assistant is toegevoegd.",
 };
 
 const translations: Record<string, Record<Key, string>> = { en, nl };

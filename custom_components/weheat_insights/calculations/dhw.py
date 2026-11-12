@@ -2,9 +2,11 @@
 
 Pure functions; the recorder and the operating tracker feed them.
 
-- The highest temperature the BOTTOM sensor reaches on a day is the
-  temperature the tank was heated to: the heat pump stops charging once the
-  bottom of the tank reaches the target. That is the day's tank target.
+- The tank target is the highest temperature the BOTTOM sensor reaches
+  during an ordinary hot-water run: the heat pump stops charging once the
+  bottom of the tank reaches the target. Hours touched by legionella
+  prevention are left out, so a weekly (or daily) high-temperature run
+  does not count as the target.
 - Standing loss is how fast the TOP of the tank cools at night while nothing
   is drawn and nothing is heated. A small hot-water draw also cools the top,
   so nights with a sudden drop are left out.
@@ -40,9 +42,7 @@ class DhwDay:
     """One day of hot water."""
 
     day: date
-    target_c: float | None  # highest bottom temperature
-    top_max_c: float | None
-    setpoint_c: float | None  # core integration's DHW target, when it has one
+    target_c: float | None  # bottom temperature reached by hot-water runs
     legionella: bool
     runs: int
     heat_kwh: float
@@ -58,9 +58,7 @@ def _local_day(moment: datetime) -> date:
 def dhw_days(
     days: Iterable[date],
     *,
-    bottom_max: Mapping[date, float],
-    top_max: Mapping[date, float],
-    setpoint_max: Mapping[date, float],
+    targets: Mapping[date, float],
     energy: Mapping[date, EnergyTotals],
     outdoor_mean: Mapping[date, float],
     periods: Iterable[Period],
@@ -81,9 +79,7 @@ def dhw_days(
         result.append(
             DhwDay(
                 day=day,
-                target_c=bottom_max.get(day),
-                top_max_c=top_max.get(day),
-                setpoint_c=setpoint_max.get(day),
+                target_c=targets.get(day),
                 legionella=day in legionella,
                 runs=runs.get(day, 0),
                 heat_kwh=heat,
@@ -92,6 +88,47 @@ def dhw_days(
                 outdoor_c=outdoor_mean.get(day),
             )
         )
+    return result
+
+
+def _hours(period: Period, after: timedelta = timedelta(0)) -> list[datetime]:
+    """Hour starts (local) from the hour a period starts to the one it ends."""
+    hour = period.start.replace(minute=0, second=0, microsecond=0)
+    hours = []
+    while hour < period.end + after:
+        hours.append(hour)
+        hour += timedelta(hours=1)
+    return hours
+
+
+def run_targets(
+    bottom_hourly_max: Mapping[datetime, float], periods: Iterable[Period]
+) -> dict[date, float]:
+    """Tank target per day: highest bottom temperature during hot-water runs.
+
+    Uses hourly maxima (local hour starts) in the hours of each ``dhw`` run.
+    Hours touched by legionella prevention, and the hour after it, are left
+    out: the tank is still hotter than its usual target then.
+    """
+    periods = list(periods)
+    legionella = {
+        hour
+        for period in periods
+        if period.group == "legionella"
+        for hour in _hours(period, timedelta(hours=1))
+    }
+    result: dict[date, float] = {}
+    for period in periods:
+        if period.group != "dhw":
+            continue
+        values = [
+            bottom_hourly_max[hour]
+            for hour in _hours(period)
+            if hour not in legionella and hour in bottom_hourly_max
+        ]
+        if values:
+            day = period.start.date()
+            result[day] = max(result.get(day, values[0]), *values)
     return result
 
 
@@ -106,15 +143,12 @@ def start_hours(periods: Iterable[Period], since: datetime) -> list[int]:
 
 def _busy_hours(periods: Iterable[Period]) -> set[datetime]:
     """Hour starts (local) touched by a tank run or its settling time."""
-    busy: set[datetime] = set()
-    for period in periods:
-        if period.group not in TANK_GROUPS:
-            continue
-        hour = period.start.replace(minute=0, second=0, microsecond=0)
-        while hour < period.end + SETTLE:
-            busy.add(hour)
-            hour += timedelta(hours=1)
-    return busy
+    return {
+        hour
+        for period in periods
+        if period.group in TANK_GROUPS
+        for hour in _hours(period, SETTLE)
+    }
 
 
 def standing_loss(

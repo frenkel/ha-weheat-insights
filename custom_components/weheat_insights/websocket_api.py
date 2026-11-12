@@ -14,6 +14,7 @@ import voluptuous as vol
 from .const import DOMAIN
 from .degree_day_statistics import statistic_id as degree_day_statistic_id
 from .dhw import DEFAULT_DAYS as DHW_DEFAULT_DAYS, async_dhw
+from .dhw_statistics import statistic_id as dhw_target_statistic_id
 from .discovery import WeheatKey
 from .history import MAX_COUNT, async_history
 from .house import async_supply_curve, curve_payload, heat_loss_payload
@@ -71,6 +72,11 @@ def ws_dashboard_config(
                 "degree_days_statistic_id": (
                     degree_day_statistic_id(data.pump.uuid)
                     if data.outdoor_entity_id
+                    else None
+                ),
+                "dhw_target_statistic_id": (
+                    dhw_target_statistic_id(data.pump.uuid)
+                    if WeheatKey.DHW_BOTTOM_TEMPERATURE in data.entities
                     else None
                 ),
                 "outdoor_entity_id": data.outdoor_entity_id,

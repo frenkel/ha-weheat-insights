@@ -7,7 +7,7 @@ tracker; the calculations live in calculations/dhw.py.
 
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from statistics import median
 from typing import TYPE_CHECKING, Any
 
@@ -15,7 +15,13 @@ from homeassistant.const import UnitOfTemperature
 from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
 
-from .calculations.dhw import dhw_days, standing_loss, start_hours, weekly_median
+from .calculations.dhw import (
+    dhw_days,
+    run_targets,
+    standing_loss,
+    start_hours,
+    weekly_median,
+)
 from .calculations.operating import Period
 from .discovery import WeheatKey
 from .statistics import async_energy, async_series, local_midnight
@@ -32,6 +38,35 @@ def _round(value: float | None, digits: int = 2) -> float | None:
     return None if value is None else round(value, digits)
 
 
+def local_periods(data: WeheatInsightsData, since: datetime) -> list[Period]:
+    """Return the tracked periods ending after ``since``, in local time."""
+    return [
+        Period(p.group, dt_util.as_local(p.start), dt_util.as_local(p.end))
+        for p in (data.operating.periods if data.operating is not None else [])
+        if p.end >= since
+    ]
+
+
+async def async_targets(
+    hass: HomeAssistant,
+    data: WeheatInsightsData,
+    start: datetime,
+    end: datetime,
+    periods: list[Period],
+) -> dict[date, float]:
+    """Tank target per day from hot-water runs (legionella left out)."""
+    hourly = await async_series(
+        hass,
+        {"bottom": data.entities.get(WeheatKey.DHW_BOTTOM_TEMPERATURE, "")},
+        start,
+        end,
+        period="hour",
+        kind="max",
+        units={"temperature": UnitOfTemperature.CELSIUS},
+    )
+    return run_targets(hourly["bottom"], periods)
+
+
 async def async_dhw(
     hass: HomeAssistant, data: WeheatInsightsData, days: int = DEFAULT_DAYS
 ) -> dict[str, Any]:
@@ -42,19 +77,6 @@ async def async_dhw(
     start, end = local_midnight(first), local_midnight(today + timedelta(days=1))
     celsius = {"temperature": UnitOfTemperature.CELSIUS}
 
-    maxima = await async_series(
-        hass,
-        {
-            "bottom": entities.get(WeheatKey.DHW_BOTTOM_TEMPERATURE, ""),
-            "top": entities.get(WeheatKey.DHW_TOP_TEMPERATURE, ""),
-            "setpoint": entities.get(WeheatKey.DHW_TARGET_TEMPERATURE, ""),
-        },
-        start,
-        end,
-        period="day",
-        kind="max",
-        units=celsius,
-    )
     outdoor = await async_series(
         hass,
         {"outdoor": data.outdoor_entity_id or ""},
@@ -75,11 +97,8 @@ async def async_dhw(
     )
     energy = await async_energy(hass, entities, first, today + timedelta(days=1))
 
-    periods = [
-        Period(p.group, dt_util.as_local(p.start), dt_util.as_local(p.end))
-        for p in (data.operating.periods if data.operating is not None else [])
-        if p.end >= start
-    ]
+    periods = local_periods(data, start)
+    targets = await async_targets(hass, data, start, end, periods)
 
     def by_day(series: dict) -> dict[date, float]:
         return {moment.date(): value for moment, value in series.items()}
@@ -87,9 +106,7 @@ async def async_dhw(
     day_list = [first + timedelta(days=n) for n in range(days)]
     rows = dhw_days(
         day_list,
-        bottom_max=by_day(maxima["bottom"]),
-        top_max=by_day(maxima["top"]),
-        setpoint_max=by_day(maxima["setpoint"]),
+        targets=targets,
         energy=energy,
         outdoor_mean=by_day(outdoor["outdoor"]),
         periods=periods,
@@ -100,8 +117,6 @@ async def async_dhw(
             {
                 "day": row.day.isoformat(),
                 "target_c": _round(row.target_c, 1),
-                "top_max_c": _round(row.top_max_c, 1),
-                "setpoint_c": _round(row.setpoint_c, 1),
                 "legionella": row.legionella,
                 "runs": row.runs,
                 "heat_kwh": _round(row.heat_kwh),
