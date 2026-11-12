@@ -152,7 +152,7 @@ const en = {
   dhw_heat_per_run: "Heat per run",
   dhw_heat_per_day: "Heat per day",
   dhw_standing_loss: "Standing loss",
-  dhw_summary_note: "Averages over the last {days} complete days; heated to is the highest temperature of the bottom sensor, and usually the median over those days.",
+  dhw_summary_note: "Over the last {days} days. Heated to: highest temperature at the bottom of the tank.",
   dhw_tank_temperature: "Tank temperature",
   dhw_setpoint: "Set target",
   dhw_heat: "Heat",
@@ -165,7 +165,7 @@ const en = {
   dhw_fit_outdoor: "Each °C warmer outside changes the COP by {value} (dashed line).",
   dhw_color_outdoor: "colour: outdoor cold → warm",
   dhw_color_target: "colour: tank cooler → hotter",
-  dhw_definitions: "**How hot water is measured.** What the tank was *heated to* on a day is the highest temperature of the *bottom* sensor: the heat pump stops heating once the bottom of the tank is at its target. On a day with legionella prevention that is the higher legionella temperature; those days are hollow in the scatter charts. *COP* is hot-water heat divided by hot-water electricity plus its share of defrost, per day once at least 0.25 kWh was used. The dashed lines are straight-line fits through the days without legionella prevention (through all days if it runs almost daily). *Standing loss* is how fast the *top* of the tank cools at night (00:00–07:00) in hours without a run, an hour after a run, or a sudden drop from tapping; it depends on the tank and on the room it stands in. Tank temperatures have history only since the Weheat integration was added to Home Assistant.",
+  dhw_definitions: "**How hot water is measured**\n\n- **Heated to**: the highest temperature of the *bottom* sensor that day; the heat pump stops once the bottom of the tank is at its target. On a legionella day that is the legionella temperature.\n- **COP**: hot-water heat ÷ hot-water electricity plus its share of defrost, per day from 0.25 kWh.\n- **Dashed lines**: straight-line fits through the days without legionella prevention (hollow dots).\n- **Standing loss**: how fast the *top* of the tank cools at night (00:00–07:00) without a run or tapping; depends on the tank and the room it is in.\n- **History**: tank temperatures start when the Weheat integration was added to Home Assistant.",
 };
 
 type Key = keyof typeof en;
@@ -322,7 +322,7 @@ const nl: Record<Key, string> = {
   dhw_heat_per_run: "Warmte per run",
   dhw_heat_per_day: "Warmte per dag",
   dhw_standing_loss: "Stilstandsverlies",
-  dhw_summary_note: "Gemiddelden over de laatste {days} volledige dagen; opgewarmd tot is de hoogste temperatuur van de onderste sensor, en meestal de mediaan over die dagen.",
+  dhw_summary_note: "Over de laatste {days} dagen. Opgewarmd tot: hoogste temperatuur onderin de boiler.",
   dhw_tank_temperature: "Boilertemperatuur",
   dhw_setpoint: "Ingestelde doeltemperatuur",
   dhw_heat: "Warmte",
@@ -335,7 +335,7 @@ const nl: Record<Key, string> = {
   dhw_fit_outdoor: "Elke °C warmer buiten verandert de COP met {value} (stippellijn).",
   dhw_color_outdoor: "kleur: buiten koud → warm",
   dhw_color_target: "kleur: boiler koeler → heter",
-  dhw_definitions: "**Zo wordt warm water gemeten.** Waartoe de boiler op een dag is *opgewarmd*, is de hoogste temperatuur van de *onderste* sensor: de warmtepomp stopt met opwarmen zodra de onderkant van de boiler op temperatuur is. Op een dag met legionellapreventie is dat de hogere legionellatemperatuur; die dagen zijn open rondjes in de puntgrafieken. De *COP* is warmwaterwarmte gedeeld door warmwaterstroom plus het deel van het ontdooien, per dag zodra er minstens 0,25 kWh is gebruikt. De stippellijnen zijn rechte lijnen door de dagen zonder legionellapreventie (door alle dagen als die bijna dagelijks draait). *Stilstandsverlies* is hoe snel de *bovenkant* van de boiler 's nachts (00:00–07:00) afkoelt, in uren zonder run, zonder het uur na een run en zonder plotselinge daling door tappen; het hangt af van de boiler en van de ruimte waarin hij staat. Boilertemperaturen hebben pas geschiedenis sinds de Weheat-integratie aan Home Assistant is toegevoegd.",
+  dhw_definitions: "**Zo wordt warm water gemeten**\n\n- **Opgewarmd tot**: de hoogste temperatuur van de *onderste* sensor die dag; de warmtepomp stopt zodra de onderkant van de boiler op temperatuur is. Op een legionelladag is dat de legionellatemperatuur.\n- **COP**: warmwaterwarmte ÷ warmwaterstroom plus het deel van het ontdooien, per dag vanaf 0,25 kWh.\n- **Stippellijnen**: rechte lijnen door de dagen zonder legionellapreventie (open rondjes).\n- **Stilstandsverlies**: hoe snel de *bovenkant* van de boiler 's nachts (00:00–07:00) afkoelt zonder run of tappen; hangt af van de boiler en de ruimte waarin hij staat.\n- **Geschiedenis**: boilertemperaturen beginnen pas sinds de Weheat-integratie aan Home Assistant is toegevoegd.",
 };
 
 const translations: Record<string, Record<Key, string>> = { en, nl };
