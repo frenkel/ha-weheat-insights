@@ -65,6 +65,35 @@ def test_dhw_days_combine_target_runs_and_cop() -> None:
     assert rows[1].outdoor_c is None
 
 
+def test_hot_days_before_tracking_count_as_legionella() -> None:
+    days = [date(2026, 10, d) for d in range(1, 8)]
+    targets = dict.fromkeys(days, 50.0) | {date(2026, 10, 4): 64.0}
+    targets[date(2026, 10, 7)] = 63.0  # tracked from the 6th: periods decide
+    periods = [
+        Period(
+            "dhw",
+            datetime(2026, 10, 6, 6, tzinfo=TZ),
+            datetime(2026, 10, 6, 7, tzinfo=TZ),
+        )
+    ]
+    rows = dhw_days(days, targets=targets, energy={}, outdoor_mean={}, periods=periods)
+    flags = {row.day.day: row.legionella for row in rows}
+    assert flags == {
+        1: False,
+        2: False,
+        3: False,
+        4: True,
+        5: False,
+        6: False,
+        7: False,
+    }
+
+    # Kept at 64 °C every day: nothing stands out, nothing is flagged.
+    hot = dict.fromkeys(days, 64.0)
+    rows = dhw_days(days, targets=hot, energy={}, outdoor_mean={}, periods=[])
+    assert not any(row.legionella for row in rows)
+
+
 def test_start_hours_count_tank_runs_since() -> None:
     periods = [
         Period("dhw", _at(2, 6, 10), _at(2, 7)),

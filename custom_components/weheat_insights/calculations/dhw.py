@@ -34,6 +34,11 @@ MAX_RISE_K = 0.2  # heating
 MIN_HOURS = 3  # values (so at least two hour steps)
 
 TANK_GROUPS = ("dhw", "legionella")
+# Before Weheat Insights followed the heat pump there are no periods to tell
+# legionella prevention apart; a day this much hotter than usual is taken as
+# one. Relative to the usual temperature, so a tank kept at 64 °C every day
+# is not mistaken for daily legionella prevention.
+LEGIONELLA_MARGIN_K = 5.0
 
 
 @dataclass(frozen=True, slots=True)
@@ -65,6 +70,10 @@ def dhw_days(
     """Combine the daily figures; periods must be in local time."""
     runs: dict[date, int] = {}
     legionella: set[date] = set()
+    periods = list(periods)
+    tracked_since = min((p.start.date() for p in periods), default=None)
+    known = [v for v in targets.values() if v is not None]
+    usual = median(known) if known else None
     for period in periods:
         day = _local_day(period.start)
         if period.group == "dhw":
@@ -79,7 +88,8 @@ def dhw_days(
             DhwDay(
                 day=day,
                 target_c=targets.get(day),
-                legionella=day in legionella,
+                legionella=day in legionella
+                or _hot_untracked(day, targets.get(day), usual, tracked_since),
                 runs=runs.get(day, 0),
                 heat_kwh=heat,
                 electricity_kwh=electricity,
@@ -88,6 +98,19 @@ def dhw_days(
             )
         )
     return result
+
+
+def _hot_untracked(
+    day: date, target: float | None, usual: float | None, tracked_since: date | None
+) -> bool:
+    """Tell whether an untracked day was clearly hotter than usual."""
+    untracked = tracked_since is None or day < tracked_since
+    return (
+        untracked
+        and target is not None
+        and usual is not None
+        and target >= usual + LEGIONELLA_MARGIN_K
+    )
 
 
 def _hours(period: Period, after: timedelta = timedelta(0)) -> list[datetime]:
