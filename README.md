@@ -41,9 +41,10 @@ with one dot per day of heating against the indoor–outdoor difference.
     hours, hot-water heat and electricity per day, COP against tank temperature and against
     outdoor temperature, at what time of day the tank is heated, and the
     tank's standing loss per week.
-  - **Live**: operating state, COP gauge (while running), room and target
-    temperature, outdoor, supply and return temperatures, ΔT, electrical
-    power and heat output,
+  - **Live**: operating state, COP gauge (while running), room temperature
+    (and the thermostat's room target, when it reports one), outdoor, supply
+    and return temperatures, the supply target, ΔT, electrical power and
+    heat output,
     graphs for the last 24 hours (water and air temperatures apart, power,
     ΔT) and hourly water and air temperatures for the last 7 days.
 - Sensors, all on a separate "Weheat Insights" device per heat pump:

@@ -32,6 +32,20 @@ function tile(entity: string | null | undefined, name: string): LovelaceCardConf
   return entity ? { type: "tile", entity, name } : null;
 }
 
+/** Show a card only while its entity has a value. */
+function whenAvailable(card: LovelaceCardConfig | null): LovelaceCardConfig | null {
+  if (!card) return null;
+  const entityId = card.entity as string;
+  return {
+    type: "conditional",
+    conditions: [
+      { condition: "state", entity: entityId, state_not: "unavailable" },
+      { condition: "state", entity: entityId, state_not: "unknown" },
+    ],
+    card,
+  };
+}
+
 function entity(entityId: string | null | undefined, name: string): Entity | null {
   return entityId ? { entity: entityId, name } : null;
 }
@@ -151,6 +165,7 @@ export function pumpView(pump: HeatPumpConfig, t: Localize, index: number): Love
   const waterTemperatures = present([
     entity(w.water_outlet_temperature, t("supply")),
     entity(w.water_inlet_temperature, t("return")),
+    entity(w.thermostat_water_setpoint, t("supply_setpoint")),
   ]);
   const airTemperatures = present([
     entity(outdoor, t("outdoor")),
@@ -167,9 +182,12 @@ export function pumpView(pump: HeatPumpConfig, t: Localize, index: number): Love
     tile(w.heat_pump_state, t("state")),
     copGauge(w.cop, w.heat_pump_state, t),
     tile(room, t("room")),
-    tile(w.thermostat_room_temperature_setpoint, t("room_setpoint")),
+    // Only with a thermostat that reports a room target; without one the
+    // sensor stays unavailable.
+    whenAvailable(tile(w.thermostat_room_temperature_setpoint, t("room_setpoint"))),
     tile(outdoor, t("outdoor")),
     tile(w.water_outlet_temperature, t("supply")),
+    tile(w.thermostat_water_setpoint, t("supply_setpoint")),
     tile(w.water_inlet_temperature, t("return")),
     tile(pump.insights.delta_t, t("delta_t_short")),
     tile(w.power_input, t("power_input_short")),
