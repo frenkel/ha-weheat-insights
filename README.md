@@ -32,10 +32,12 @@ with one dot per day of heating against the indoor–outdoor difference.
   - **Operation**: how the last 30 days were spent per state (heating, hot
     water, defrost, legionella prevention, standby), and per state the number
     of periods today / 7 / 30 days and their average length, with periods and
-    hours per day as bar charts and defrosts next to degree days.
+    running hours per day (standby left out) as bar charts and defrosts next
+    to degree days.
   - **Live**: operating state, COP gauge (while running), room, outdoor,
     supply and return temperatures, ΔT, electrical power and heat output,
-    graphs for the last 24 hours and hourly statistics for the last 7 days.
+    graphs for the last 24 hours (water and air temperatures apart, power,
+    ΔT) and hourly water and air temperatures for the last 7 days.
 - Sensors, all on a separate "Weheat Insights" device per heat pump:
   - ΔT supply/return.
   - COP today, COP this month and SCOP this season: heat pump, total,

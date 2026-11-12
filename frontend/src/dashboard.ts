@@ -142,9 +142,13 @@ export function pumpView(pump: HeatPumpConfig, t: Localize, index: number): Love
   const room = roomEntity(pump);
   const outdoor = pump.outdoor_entity_id ?? w.outside_temperature;
 
-  const temperatures = present([
+  // Water and air on separate charts: on one shared axis (0–70 °C) the
+  // room temperature becomes a flat line and supply/return hide each other.
+  const waterTemperatures = present([
     entity(w.water_outlet_temperature, t("supply")),
     entity(w.water_inlet_temperature, t("return")),
+  ]);
+  const airTemperatures = present([
     entity(outdoor, t("outdoor")),
     entity(room, t("room")),
   ]);
@@ -169,19 +173,20 @@ export function pumpView(pump: HeatPumpConfig, t: Localize, index: number): Love
 
   const day = section([
     heading(t("last_24h"), "mdi:clock-outline"),
-    historyGraph(t("temperatures"), temperatures, 24),
+    historyGraph(t("water_temperatures"), waterTemperatures, 24),
+    historyGraph(t("air_temperatures"), airTemperatures, 24),
     historyGraph(t("power"), power, 24),
     historyGraph(t("delta_t"), deltaT, 24),
   ]);
 
   // Seven days of raw history is heavy; hourly long-term statistics are not.
-  // No COP here: the hourly mean of an instantaneous COP includes idle
-  // periods (COP 0) and means nothing. Real COP per period is phase 2.
+  // Temperatures only: hourly means of power, ΔT or COP mix running and idle
+  // minutes of a cycling pump into spikes that mean little. Energy per day
+  // is on the performance tab.
   const week = section([
     heading(t("last_7d"), "mdi:calendar-week"),
-    statisticsGraph(t("temperatures"), temperatures, 7),
-    statisticsGraph(t("power"), power, 7),
-    statisticsGraph(t("delta_t"), deltaT, 7),
+    statisticsGraph(t("water_temperatures"), waterTemperatures, 7),
+    statisticsGraph(t("air_temperatures"), airTemperatures, 7),
   ]);
 
   return {
@@ -426,7 +431,7 @@ export function operationView(pump: HeatPumpConfig, t: Localize, index: number):
   const perDay = section(
     [
       changeBars(t("op_periods_per_day"), counters("_periods_total", ["heating", "dhw", "defrost", "legionella"]), "day", 30),
-      changeBars(t("op_hours_per_day"), counters("_time_total", ["heating", "dhw", "defrost", "legionella", "standby"]), "day", 30),
+      changeBars(t("op_hours_per_day"), counters("_time_total", ["heating", "dhw", "defrost", "legionella"]), "day", 30),
     ],
     2,
     true,
