@@ -17,10 +17,10 @@
     "recorder",
     "websocket_api"
   ],
-  "documentation": "https://github.com/frenkel/ha-weheat-insights",
+  "documentation": "https://github.com/lektriek/ha-weheat-insights",
   "integration_type": "service",
   "iot_class": "calculated",
-  "issue_tracker": "https://github.com/frenkel/ha-weheat-insights/issues",
+  "issue_tracker": "https://github.com/lektriek/ha-weheat-insights/issues",
   "requirements": [],
   "version": "0.8.3"
 }

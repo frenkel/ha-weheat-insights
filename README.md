@@ -99,7 +99,7 @@ each state ran, with hours per state per day.
 ### HACS (recommended)
 
 1. In HACS, open the menu → **Custom repositories**, add
-   `https://github.com/frenkel/ha-weheat-insights` with type **Integration**.
+   `https://github.com/lektriek/ha-weheat-insights` with type **Integration**.
 2. Install **Weheat Insights** and restart Home Assistant.
 
 ### Manual
