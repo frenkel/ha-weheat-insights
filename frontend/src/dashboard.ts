@@ -422,6 +422,8 @@ export function operationView(pump: HeatPumpConfig, t: Localize, index: number):
   const summary = section(
     [
       heading(t("operation"), "mdi:state-machine"),
+      // Current state first, then time per state and the table (one card).
+      historyGraph(t("op_timeline"), present([entity(w.heat_pump_state, t("state"))]), 24),
       Object.keys(cardEntities).length
         ? { type: `custom:${OPERATING_CARD_TAG}`, entities: cardEntities, grid_options: { columns: "full" } }
         : null,
@@ -447,10 +449,6 @@ export function operationView(pump: HeatPumpConfig, t: Localize, index: number):
     ],
     2,
   );
-  const timeline = section([
-    heading(t("op_timeline"), "mdi:timeline-clock-outline"),
-    historyGraph(t("state"), present([entity(w.heat_pump_state, t("state"))]), 24),
-  ]);
   const explanation = aboutSection(t, "op_definitions");
   return {
     title: `${pump.name} · ${t("operation")}`,
@@ -458,7 +456,7 @@ export function operationView(pump: HeatPumpConfig, t: Localize, index: number):
     icon: "mdi:state-machine",
     type: "sections",
     max_columns: 4,
-    sections: present([summary, perDay, defrost, timeline, explanation]),
+    sections: present([summary, perDay, defrost, explanation]),
   };
 }
 

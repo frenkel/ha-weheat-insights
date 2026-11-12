@@ -29,7 +29,8 @@ with one dot per day of heating against the indoor–outdoor difference.
     temperature, next to your current curve if you enter it under Configure;
     supply temperature against outdoor temperature (up to 25 °C) with both
     curves; before/after comparison of a curve change, corrected for weather.
-  - **Operation**: how the last 30 days were spent per state (heating, hot
+  - **Operation**: the operating state over the last 24 hours, how the last
+    30 days were spent per state (heating, hot
     water, defrost, legionella prevention, standby), and per state the number
     of periods today / 7 / 30 days and their average length, with periods and
     running hours per day (standby left out) as bar charts and defrosts next
