@@ -311,10 +311,15 @@ before.
 - **Hot-water COP per day** = hot-water heat ÷ hot-water electricity plus
   its share of defrost, once at least 0.25 kWh was used that day.
 - The **COP against tank temperature** and **against outdoor temperature**
-  charts have one dot per day for the last 90 days, with a straight-line fit
-  through the days without legionella prevention (through all days when it
-  runs almost daily): it shows what each degree hotter in the tank, or colder
-  outside, costs. Legionella days are drawn as hollow dots.
+  charts have one dot per day for the last 90 days. The dashed line is a
+  least-squares fit of COP against both temperatures at once, so each slope
+  is the effect of that temperature alone: warm days end a little hotter, and
+  a plain line through COP against tank temperature would mostly measure the
+  weather. The line is only drawn when the middle 80 % of the days spread at
+  least 3 °C; a tank always heated to the same temperature gets a short note
+  instead. Legionella days are hollow dots and left out of the fit (unless it
+  runs almost daily); their average COP is shown next to that of the other
+  days.
 - **Standing loss** is how fast the top of the tank cools at night
   (00:00–07:00) in hours without a hot-water run, the hour after one, or a
   sudden drop from tapping (more than 1 K in an hour), in K/h; one figure per

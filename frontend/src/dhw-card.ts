@@ -66,21 +66,67 @@ const PLOT_H = HEIGHT - PAD.top - PAD.bottom;
 const REFRESH_MS = 60 * 60 * 1000;
 const FETCH_DAYS = 90;
 
-/** Least-squares line through points; null with too few or too close x's. */
-export function linearFit(points: { x: number; y: number }[]): { slope: number; intercept: number } | null {
-  if (points.length < 8) return null;
-  const xs = points.map((p) => p.x);
-  if (Math.max(...xs) - Math.min(...xs) < 3) return null;
-  const mx = xs.reduce((a, b) => a + b, 0) / xs.length;
-  const my = points.reduce((a, p) => a + p.y, 0) / points.length;
-  let sxy = 0;
-  let sxx = 0;
-  for (const p of points) {
-    sxy += (p.x - mx) * (p.y - my);
-    sxx += (p.x - mx) ** 2;
+/** Value at fraction q (0-1) of the sorted values. */
+function quantile(values: number[], q: number): number {
+  const sorted = [...values].sort((a, b) => a - b);
+  return sorted[Math.min(sorted.length - 1, Math.max(0, Math.round(q * (sorted.length - 1))))];
+}
+
+/** Spread of the middle 80 % of the values: one or two odd days don't count. */
+export function middleSpread(values: number[]): number {
+  return values.length ? quantile(values, 0.9) - quantile(values, 0.1) : 0;
+}
+
+/** At least this many days, spread at least this much (K), for a fit. */
+export const MIN_FIT_DAYS = 8;
+export const MIN_SPREAD_K = 3;
+
+export interface CopFit {
+  /** COP change per °C of x, with the other temperature held equal. */
+  slope: number;
+  /** The fitted COP at x, for the average of the other temperature. */
+  at: (x: number) => number;
+}
+
+/**
+ * COP against temperature x, corrected for a second temperature z.
+ *
+ * Tank and outdoor temperature move together (warm days end a little
+ * hotter), so a plain line through COP against one of them also measures
+ * the other. With both in one least-squares fit each slope is the effect of
+ * that temperature alone. When z hardly varies (a tank always heated to the
+ * same temperature) it cannot confuse anything and a plain line is used.
+ * Returns null with too few days or too little spread in x.
+ */
+export function copFit(rows: { x: number; z: number | null; y: number }[]): CopFit | null {
+  if (rows.length < MIN_FIT_DAYS || middleSpread(rows.map((r) => r.x)) < MIN_SPREAD_K) return null;
+  const mean = (values: number[]) => values.reduce((a, b) => a + b, 0) / values.length;
+  const withZ = rows.filter((r): r is { x: number; z: number; y: number } => r.z != null);
+  if (withZ.length >= MIN_FIT_DAYS && middleSpread(withZ.map((r) => r.z)) >= 1) {
+    const [mx, mz, my] = [mean(withZ.map((r) => r.x)), mean(withZ.map((r) => r.z)), mean(withZ.map((r) => r.y))];
+    let [sxx, szz, sxz, sxy, szy] = [0, 0, 0, 0, 0];
+    for (const r of withZ) {
+      const [dx, dz, dy] = [r.x - mx, r.z - mz, r.y - my];
+      sxx += dx * dx;
+      szz += dz * dz;
+      sxz += dx * dz;
+      sxy += dx * dy;
+      szy += dz * dy;
+    }
+    const det = sxx * szz - sxz * sxz;
+    if (det > 1e-9 * sxx * szz) {
+      const b = (szz * sxy - sxz * szy) / det;
+      return { slope: b, at: (x) => my + b * (x - mx) };
+    }
   }
-  const slope = sxy / sxx;
-  return { slope, intercept: my - slope * mx };
+  const [mx, my] = [mean(rows.map((r) => r.x)), mean(rows.map((r) => r.y))];
+  let [sxx, sxy] = [0, 0];
+  for (const r of rows) {
+    sxx += (r.x - mx) ** 2;
+    sxy += (r.x - mx) * (r.y - my);
+  }
+  const b = sxy / sxx;
+  return { slope: b, at: (x) => my + b * (x - mx) };
 }
 
 /** Cold (blue) to warm (red) for an outdoor temperature. */
@@ -303,14 +349,17 @@ export class WeheatInsightsDhwCard extends LitElement {
     const f1 = this._fmt(1);
     const points = days.map((d) => ({
       x: (against === "target" ? d.target_c : d.outdoor_c) as number,
+      // The other temperature, to correct for.
+      z: against === "target" ? d.outdoor_c : d.target_c,
       y: d.cop as number,
       d,
     }));
     // Days with legionella prevention cost more; leave them out of the fit,
     // unless it runs (almost) every day: then those days are the normal case.
     const withoutLegionella = points.filter((p) => !p.d.legionella);
-    const clean = withoutLegionella.length >= 8 ? withoutLegionella : points;
-    const fit = linearFit(clean);
+    const separateLegionella = withoutLegionella.length >= MIN_FIT_DAYS;
+    const clean = separateLegionella ? withoutLegionella : points;
+    const fit = copFit(clean);
     // Draw the fit only where its days are, not out to the legionella days.
     const fitFrom = Math.min(...clean.map((p) => p.x));
     const fitTo = Math.max(...clean.map((p) => p.x));
@@ -331,13 +380,28 @@ export class WeheatInsightsDhwCard extends LitElement {
         : `hsl(${(220 - 220 * (hi > lo ? (v - lo) / (hi - lo) : 0.5)).toFixed(0)} 70% 50%)`;
     const color = (d: DhwDay) => (against === "target" ? outdoorColor(d.outdoor_c) : tankColor(d.target_c));
     const unit = "°C";
+    const f2 = this._fmt(2);
     const fitText = fit
       ? (against === "target" ? t("dhw_fit_target") : t("dhw_fit_outdoor")).replace(
           "{value}",
           new Intl.NumberFormat(language(this.hass!), { maximumFractionDigits: 2, signDisplay: "always" }).format(fit.slope),
         )
-      : null;
+      : clean.length >= MIN_FIT_DAYS
+        ? against === "target"
+          ? t("dhw_fit_narrow_target")
+          : t("dhw_fit_narrow_outdoor")
+        : null;
+    // What legionella prevention costs: its days against the other days.
+    const legionellaDays = points.filter((p) => p.d.legionella);
+    const meanCop = (ps: typeof points) => ps.reduce((a, p) => a + p.y, 0) / ps.length;
+    const legionellaText =
+      against === "target" && separateLegionella && legionellaDays.length
+        ? t("dhw_legionella_cop")
+            .replace("{legionella}", f2.format(meanCop(legionellaDays)))
+            .replace("{other}", f2.format(meanCop(withoutLegionella)))
+        : null;
     return html`${fitText ? html`<div class="summary">${fitText}</div>` : nothing}
+      ${legionellaText ? html`<div class="summary">${legionellaText}</div>` : nothing}
       <svg viewBox="0 0 ${WIDTH} ${HEIGHT + 10}" role="img">
         ${yTicks.map(
           (v) => svg`<line class="grid" x1=${PAD.left} x2=${WIDTH - PAD.right} y1=${sy(v)} y2=${sy(v)}></line>
@@ -358,7 +422,7 @@ export class WeheatInsightsDhwCard extends LitElement {
           </circle>`,
         )}
         ${fit
-          ? svg`<line class="fit" x1=${sx(fitFrom)} y1=${sy(fit.intercept + fit.slope * fitFrom)} x2=${sx(fitTo)} y2=${sy(fit.intercept + fit.slope * fitTo)}></line>`
+          ? svg`<line class="fit" x1=${sx(fitFrom)} y1=${sy(fit.at(fitFrom))} x2=${sx(fitTo)} y2=${sy(fit.at(fitTo))}></line>`
           : nothing}
       </svg>
       <div class="legend">
