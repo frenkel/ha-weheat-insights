@@ -39,6 +39,9 @@ TANK_GROUPS = ("dhw", "legionella")
 # one. Relative to the usual temperature, so a tank kept at 64 °C every day
 # is not mistaken for daily legionella prevention.
 LEGIONELLA_MARGIN_K = 5.0
+# One tank run can be split into several periods when the heat pump briefly
+# heats the house or defrosts in between; parts this close belong together.
+MAX_RUN_GAP = timedelta(minutes=60)
 
 
 @dataclass(frozen=True, slots=True)
@@ -74,7 +77,7 @@ def dhw_days(
     tracked_since = min((p.start.date() for p in periods), default=None)
     known = [v for v in targets.values() if v is not None]
     usual = median(known) if known else None
-    for period in periods:
+    for period in tank_runs(periods):
         day = _local_day(period.start)
         if period.group == "dhw":
             runs[day] = runs.get(day, 0) + 1
@@ -123,11 +126,33 @@ def _hours(period: Period, after: timedelta = timedelta(0)) -> list[datetime]:
     return hours
 
 
+def tank_runs(periods: Iterable[Period]) -> list[Period]:
+    """Hot-water and legionella periods joined into runs.
+
+    Parts less than MAX_RUN_GAP apart are one run (a short heating or defrost
+    period in between splits a run in the state history). A run with any
+    legionella prevention in it counts as legionella prevention.
+    """
+    runs: list[Period] = []
+    for period in sorted(
+        (p for p in periods if p.group in TANK_GROUPS), key=lambda p: p.start
+    ):
+        if runs and period.start - runs[-1].end <= MAX_RUN_GAP:
+            last = runs[-1]
+            group = (
+                "legionella" if "legionella" in (last.group, period.group) else "dhw"
+            )
+            runs[-1] = Period(group, last.start, max(last.end, period.end))
+        else:
+            runs.append(period)
+    return runs
+
+
 def start_hours(periods: Iterable[Period], since: datetime) -> list[int]:
     """Count hot-water runs (incl. legionella) starting in each hour 0-23."""
     counts = [0] * 24
-    for period in periods:
-        if period.group in TANK_GROUPS and period.start >= since:
+    for period in tank_runs(periods):
+        if period.start >= since:
             counts[period.start.hour] += 1
     return counts
 

@@ -94,6 +94,33 @@ def test_hot_days_before_tracking_count_as_legionella() -> None:
     assert not any(row.legionella for row in rows)
 
 
+def test_a_run_split_by_heating_counts_once() -> None:
+    periods = [
+        Period("dhw", _at(2, 11, 0), _at(2, 11, 40)),
+        Period("heating", _at(2, 11, 40), _at(2, 11, 55)),
+        Period("defrost", _at(2, 11, 55), _at(2, 12, 0)),
+        Period("dhw", _at(2, 12, 0), _at(2, 12, 30)),
+        # Two hours later: a new run.
+        Period("dhw", _at(2, 14, 30), _at(2, 15, 0)),
+        # Straight into legionella prevention: one legionella run.
+        Period("dhw", _at(3, 11, 0), _at(3, 11, 50)),
+        Period("legionella", _at(3, 11, 50), _at(3, 13, 0)),
+    ]
+    rows = dhw_days(
+        [date(2026, 11, 2), date(2026, 11, 3)],
+        targets={},
+        energy={},
+        outdoor_mean={},
+        periods=periods,
+    )
+    assert [row.runs for row in rows] == [2, 0]
+    assert [row.legionella for row in rows] == [False, True]
+    counts = start_hours(periods, _at(1, 0))
+    assert counts[11] == 2
+    assert counts[14] == 1
+    assert sum(counts) == 3
+
+
 def test_start_hours_count_tank_runs_since() -> None:
     periods = [
         Period("dhw", _at(2, 6, 10), _at(2, 7)),

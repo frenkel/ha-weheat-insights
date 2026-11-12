@@ -305,6 +305,9 @@ before.
   its target. On a legionella-prevention day that is the legionella
   temperature. Newer versions of the core integration also report the set
   target; when they do, its highest value of the day is drawn next to it.
+- A **run** is one heating of the tank. When the heat pump briefly heats
+  the house or defrosts in the middle of it, the parts less than an hour
+  apart still count as one run (runs per day, heat per run, start times).
 - **Hot-water COP per day** = hot-water heat ÷ hot-water electricity plus
   its share of defrost, once at least 0.25 kWh was used that day.
 - The **COP against tank temperature** and **against outdoor temperature**
