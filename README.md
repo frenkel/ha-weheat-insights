@@ -35,8 +35,9 @@ with one dot per day of heating against the indoor–outdoor difference.
     of periods today / 7 / 30 days and their average length, with periods and
     running hours per day (standby left out) as bar charts and defrosts next
     to degree days.
-  - **Live**: operating state, COP gauge (while running), room, outdoor,
-    supply and return temperatures, ΔT, electrical power and heat output,
+  - **Live**: operating state, COP gauge (while running), room and target
+    temperature, outdoor, supply and return temperatures, ΔT, electrical
+    power and heat output,
     graphs for the last 24 hours (water and air temperatures apart, power,
     ΔT) and hourly water and air temperatures for the last 7 days.
 - Sensors, all on a separate "Weheat Insights" device per heat pump:

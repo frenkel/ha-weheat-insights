@@ -163,6 +163,7 @@ export function pumpView(pump: HeatPumpConfig, t: Localize, index: number): Love
     tile(w.heat_pump_state, t("state")),
     copGauge(w.cop, w.heat_pump_state, t),
     tile(room, t("room")),
+    tile(w.thermostat_room_temperature_setpoint, t("room_setpoint")),
     tile(outdoor, t("outdoor")),
     tile(w.water_outlet_temperature, t("supply")),
     tile(w.water_inlet_temperature, t("return")),
