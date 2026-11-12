@@ -37,9 +37,9 @@ with one dot per day of heating against the indoor–outdoor difference.
     to degree days.
   - **Hot water** (when the pump has a hot-water tank): the temperature the
     tank was heated to per day (the highest temperature of the bottom
-    sensor, next to the set target), tank top and bottom over the last 48
-    hours, hot-water heat and electricity per day, COP against tank temperature and against
-    outdoor temperature, at what time of day the tank is heated, and the
+    sensor), tank top and bottom over the last 48 hours, hot-water heat and
+    electricity per day, COP against tank temperature and against outdoor
+    temperature, at what time of day the tank is heated, and the
     tank's standing loss per week.
   - **Live**: operating state, COP gauge (while running), room temperature
     (and the thermostat's room target, when it reports one), outdoor, supply
@@ -304,8 +304,7 @@ before.
 - What the tank was **heated to** on a day is the highest temperature of the
   bottom sensor: the heat pump stops heating the tank once its bottom is at
   its target. On a legionella-prevention day that is the legionella
-  temperature. Newer versions of the core integration also report the set
-  target; when they do, its highest value of the day is drawn next to it.
+  temperature.
 - A **run** is one heating of the tank. When the heat pump briefly heats
   the house or defrosts in the middle of it, the parts less than an hour
   apart still count as one run (runs per day, heat per run, start times).

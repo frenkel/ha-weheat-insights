@@ -35,7 +35,6 @@ class WeheatKey(StrEnum):
     CH_FLOW = "central_heating_flow_volume"
     DHW_TOP_TEMPERATURE = "dhw_top_temperature"
     DHW_BOTTOM_TEMPERATURE = "dhw_bottom_temperature"
-    DHW_TARGET_TEMPERATURE = "dhw_target_temperature"
     ELECTRICITY_USED = "electricity_used"
     ELECTRICITY_USED_INDOOR_UNIT = "electricity_used_indoor_unit"
     ELECTRICITY_USED_HEATING = "electricity_used_heating"
