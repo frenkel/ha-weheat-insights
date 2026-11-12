@@ -220,6 +220,8 @@ async def test_websocket_dhw(hass: HomeAssistant, freezer) -> None:
     assert days["2026-11-11"]["target_c"] is None
     assert len(result["start_hours"]) == 24
     assert result["summary"]["target_typical_c"] == 57.5
+    # No run yet on the 11th: nothing heated today.
+    assert result["summary"]["target_today_c"] is None
 
     connection = MagicMock()
     ws_dhw(hass, connection, {"id": 2, "type": "x", "entry_id": "nope", "days": 7})

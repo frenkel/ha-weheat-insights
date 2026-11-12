@@ -139,7 +139,10 @@ def _summary(rows: list, loss: dict[date, float], today: date) -> dict[str, Any]
     recent_loss = [
         rate for night, rate in loss.items() if (today - night).days < SUMMARY_DAYS
     ]
-    target_today = rows[-1].target_c if rows else None
+    # Until the tank has been heated today, the highest bottom temperature
+    # is just what was left over from yesterday.
+    heated_today = bool(rows) and (rows[-1].runs > 0 or rows[-1].legionella)
+    target_today = rows[-1].target_c if heated_today else None
     return {
         "target_today_c": _round(target_today, 1),
         "target_typical_c": _round(median(targets), 1) if targets else None,
