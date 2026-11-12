@@ -220,7 +220,7 @@ export class WeheatInsightsScatterCard extends LitElement {
     const fit = data.fit;
     const summary = fit
       ? html`<div class="summary">
-          <strong>${Math.round(data.coefficient_w_per_k!)} ± ${Math.round(data.confidence_95_w_per_k!)} W/K</strong>
+          <strong>${Math.round(data.coefficient_w_per_k!)} ± ${Math.round(data.confidence_95_w_per_k!)} ${t("unit_w_per_diff")}</strong>
           · R² ${fit.r_squared.toFixed(2)} · ${data.days_used} ${t("days_used")}
         </div>`
       : html`<div class="summary muted">${data.reason ? t(`reason_${data.reason}` as never) : ""}</div>`;
@@ -253,7 +253,7 @@ export class WeheatInsightsScatterCard extends LitElement {
       x: p.outdoor_c,
       y: p.supply_c,
       color: deltaColor(p.delta_t_k, lo, hi),
-      tip: `${new Date(p.time).toLocaleString(lang, { dateStyle: "short", timeStyle: "short" })}: ${fmt.format(p.outdoor_c)} °C → ${fmt.format(p.supply_c)} °C, ΔT ${fmt.format(p.delta_t_k)} K`,
+      tip: `${new Date(p.time).toLocaleString(lang, { dateStyle: "short", timeStyle: "short" })}: ${fmt.format(p.outdoor_c)} °C → ${fmt.format(p.supply_c)} °C, ΔT ${fmt.format(p.delta_t_k)} ${t("unit_diff")}`,
     }));
     const toXY = (pts: CurvePoint[], key: "supply_c" | "low_c" | "high_c" = "supply_c") =>
       pts
@@ -272,9 +272,9 @@ export class WeheatInsightsScatterCard extends LitElement {
     }
     return html`${this._chart(dots, { xLabel: t("outdoor_temp"), yLabel: t("supply_temp"), curves: lines })}
       <div class="legend">
-        <span>ΔT ${fmt.format(lo)} K</span>
+        <span>ΔT ${fmt.format(lo)} ${t("unit_diff")}</span>
         <i class="gradient"></i>
-        <span>${fmt.format(hi)} K</span>
+        <span>${fmt.format(hi)} ${t("unit_diff")}</span>
         ${lines.some((l) => l.cls === "current") ? html`<span><i class="line current"></i>${t("current_curve")}</span>` : nothing}
         ${lines.some((l) => l.cls === "advice") ? html`<span><i class="line advice"></i>${t("advised_curve")}</span>` : nothing}
       </div>`;

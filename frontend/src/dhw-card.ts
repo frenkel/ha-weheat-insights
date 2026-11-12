@@ -268,7 +268,7 @@ export class WeheatInsightsDhwCard extends LitElement {
       ["mdi:counter", t("dhw_runs_per_day"), value(s.runs_per_day, f1, "×")],
       ["mdi:water-boiler", t("dhw_heat_per_run"), value(s.heat_per_run_kwh, f1, "kWh")],
       ["mdi:fire", t("dhw_heat_per_day"), value(s.heat_per_day_kwh, f1, "kWh")],
-      ["mdi:thermometer-minus", t("dhw_standing_loss"), value(s.standing_loss_k_per_h, f2, "K/h")],
+      ["mdi:thermometer-minus", t("dhw_standing_loss"), value(s.standing_loss_k_per_h, f2, t("unit_diff_per_hour"))],
     ];
     return html`<div class="stats">
         ${items.map(
@@ -304,9 +304,9 @@ export class WeheatInsightsDhwCard extends LitElement {
       value: w.k_per_h,
       cls: "loss",
       note: f.format(w.k_per_h),
-      tip: `${t("dhw_week_of")} ${w.week}: ${f.format(w.k_per_h)} K/h`,
+      tip: `${t("dhw_week_of")} ${w.week}: ${f.format(w.k_per_h)} ${t("unit_diff_per_hour")}`,
     }));
-    return html`${this._bars(bars, { min: 0, unit: "K/h" })}
+    return html`${this._bars(bars, { min: 0, unit: t("unit_diff_per_hour") })}
       <div class="note">${t("dhw_standing_loss_note")}</div>`;
   }
 

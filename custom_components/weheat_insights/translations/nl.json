@@ -145,7 +145,7 @@
         "name": "Afkoeltijdconstante"
       },
       "cool_down_rate": {
-        "name": "Afkoelsnelheid bij 15 K"
+        "name": "Afkoelsnelheid bij 15 graden verschil"
       },
       "thermal_mass": {
         "name": "Warmtecapaciteit"

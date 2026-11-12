@@ -1,6 +1,9 @@
 import type { HomeAssistant } from "./types";
 
 const en = {
+  unit_diff: "K",
+  unit_diff_per_hour: "K/h",
+  unit_w_per_diff: "W/K",
   title: "Weheat Insights",
   live: "Live",
   last_24h: "Last 24 hours",
@@ -174,6 +177,9 @@ const en = {
 type Key = keyof typeof en;
 
 const nl: Record<Key, string> = {
+  unit_diff: "°C",
+  unit_diff_per_hour: "°C/u",
+  unit_w_per_diff: "W per graad",
   title: "Weheat Insights",
   live: "Live",
   last_24h: "Afgelopen 24 uur",
@@ -269,7 +275,7 @@ const nl: Record<Key, string> = {
     "**Zo komt het advies tot stand.** Voor elke buitentemperatuur van de Weheat-stooklijn: de warmte die het huis nodig heeft (uit de warmteverliescoëfficiënt, bij je gewenste kamertemperatuur), en de watertemperatuur waarbij je afgiftesysteem precies die warmte levert (gekalibreerd op uren met continu verwarmen in de afgelopen 12 maanden, met het gekozen afgiftesysteem). Waar geen warmte nodig is, is het advies de kamertemperatuur. Het advies heeft één decimaal: vul het zo in via het Weheat-webportaal, of rond in de app naar boven af op hele graden. De *bandbreedte* komt uit de onzekerheid van de warmteverliescoëfficiënt. Punten ver buiten de gemeten buitentemperaturen zijn *geëxtrapoleerd*: zie ze als startpunt. Dit is een advies, geen garantie: pas de stooklijn in kleine stappen aan en controleer of de kamers warm blijven. Vul je huidige stooklijn in onder Instellingen → Apparaten & diensten → Weheat Insights → Configureren: tabel en grafiek tonen hem dan naast het advies. Pas je die waarden later aan, dan wordt de datum van de wijziging automatisch opgeslagen en vergelijkt voor/na het stroomverbruik voor verwarming per graaddag (gecorrigeerd voor het weer).",
   heat_loss_title: "Warmteverlies",
   supply_curve_title: "Aanvoertemperatuur vs buiten",
-  indoor_outdoor_diff: "Binnen − buiten (K)",
+  indoor_outdoor_diff: "Binnen − buiten (°C)",
   heating_per_day: "Verwarmingswarmte (kWh/dag)",
   outdoor_temp: "Buitentemperatuur (°C)",
   supply_temp: "Aanvoertemperatuur (°C)",
@@ -279,16 +285,16 @@ const nl: Record<Key, string> = {
   fit_line: "lijn",
   indoor_assumed_note: "Geen binnensensor ingesteld: 20 °C aangenomen, dus minder betrouwbaar.",
   reason_too_few_days: "Nog niet genoeg bruikbare dagen (minstens 14 nodig).",
-  reason_too_little_spread: "Nog te weinig verschil tussen zachte en koude dagen (minstens 6 K nodig).",
+  reason_too_little_spread: "Nog te weinig verschil tussen zachte en koude dagen (minstens 6 graden verschil nodig).",
   reason_no_relation: "Nog geen duidelijk verband tussen temperatuurverschil en verwarming.",
   heat_loss_coefficient: "Warmteverliescoëfficiënt",
   heat_loss_design: "Bij −10 °C",
   balance_point: "Stookgrens",
   cool_down_tau: "Tijdconstante",
-  cool_down_rate: "Afkoeling bij 15 K",
+  cool_down_rate: "Afkoeling bij 15 graden verschil",
   thermal_mass: "Warmtecapaciteit",
   house_definitions:
-    "**Warmteverlies.** Elke stip is één dag: verwarmingswarmte tegen het gemiddelde verschil tussen binnen en buiten. De helling van de lijn is de warmteverliescoëfficiënt (W/K, met een betrouwbaarheidsinterval van 95 %); waar de lijn nul raakt zie je hoeveel gratis warmte (zon, mensen, apparaten) het huis krijgt, en daarmee de stookgrens. Grijze stippen zijn dagen die niet meetellen: ontbrekende gegevens, te zacht, helemaal niet verwarmd, een grote verandering binnen of een andere warmtebron. **Afkoeling** gebruikt periodes van minstens 4 uur zonder verwarming en heeft een binnensensor nodig. **Graaddagen** geven aan hoe koud het was: per dag de basistemperatuur (18 °C, instelbaar) min de gemiddelde buitentemperatuur, standaard gewogen naar seizoen. **Verwarming per graaddag** deelt de verwarmingswarmte door de graaddagen, zodat je een zachte en een koude winter kunt vergelijken.",
+    "**Warmteverlies.** Elke stip is één dag: verwarmingswarmte tegen het gemiddelde verschil tussen binnen en buiten. De helling van de lijn is de warmteverliescoëfficiënt (W per graad verschil, met een betrouwbaarheidsinterval van 95 %); waar de lijn nul raakt zie je hoeveel gratis warmte (zon, mensen, apparaten) het huis krijgt, en daarmee de stookgrens. Grijze stippen zijn dagen die niet meetellen: ontbrekende gegevens, te zacht, helemaal niet verwarmd, een grote verandering binnen of een andere warmtebron. **Afkoeling** gebruikt periodes van minstens 4 uur zonder verwarming en heeft een binnensensor nodig. **Graaddagen** geven aan hoe koud het was: per dag de basistemperatuur (18 °C, instelbaar) min de gemiddelde buitentemperatuur, standaard gewogen naar seizoen. **Verwarming per graaddag** deelt de verwarmingswarmte door de graaddagen, zodat je een zachte en een koude winter kunt vergelijken.",
   delta_t_short: "ΔT",
   power_input_short: "Stroom",
   power_output_short: "Warmte",
